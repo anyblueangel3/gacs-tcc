@@ -2,56 +2,28 @@ package br.uel.gacs.model;
 
 import java.time.LocalDateTime;
 
-/**
- * Representa a unidade central de um trabalho experimental no GACS.
- */
+/** Representa a unidade central de um trabalho experimental. */
 public class Experimento {
-
-    private Long idExperimento;
+    private Long id;
     private String nomeExperimento;
     private LocalDateTime dataExperimento;
     private String observacoes;
+    private Long idUsuario;
 
-    public Experimento() {
+    public Experimento() { }
+    public Experimento(Long id, String nomeExperimento, LocalDateTime dataExperimento,
+                       String observacoes, Long idUsuario) {
+        this.id = id; this.nomeExperimento = nomeExperimento; this.dataExperimento = dataExperimento;
+        this.observacoes = observacoes; this.idUsuario = idUsuario;
     }
-
-    public Experimento(Long idExperimento, String nomeExperimento,
-                       LocalDateTime dataExperimento, String observacoes) {
-        this.idExperimento = idExperimento;
-        this.nomeExperimento = nomeExperimento;
-        this.dataExperimento = dataExperimento;
-        this.observacoes = observacoes;
-    }
-
-    public Long getIdExperimento() {
-        return idExperimento;
-    }
-
-    public void setIdExperimento(Long idExperimento) {
-        this.idExperimento = idExperimento;
-    }
-
-    public String getNomeExperimento() {
-        return nomeExperimento;
-    }
-
-    public void setNomeExperimento(String nomeExperimento) {
-        this.nomeExperimento = nomeExperimento;
-    }
-
-    public LocalDateTime getDataExperimento() {
-        return dataExperimento;
-    }
-
-    public void setDataExperimento(LocalDateTime dataExperimento) {
-        this.dataExperimento = dataExperimento;
-    }
-
-    public String getObservacoes() {
-        return observacoes;
-    }
-
-    public void setObservacoes(String observacoes) {
-        this.observacoes = observacoes;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public String getNomeExperimento() { return nomeExperimento; }
+    public void setNomeExperimento(String valor) { this.nomeExperimento = valor; }
+    public LocalDateTime getDataExperimento() { return dataExperimento; }
+    public void setDataExperimento(LocalDateTime valor) { this.dataExperimento = valor; }
+    public String getObservacoes() { return observacoes; }
+    public void setObservacoes(String observacoes) { this.observacoes = observacoes; }
+    public Long getIdUsuario() { return idUsuario; }
+    public void setIdUsuario(Long idUsuario) { this.idUsuario = idUsuario; }
 }

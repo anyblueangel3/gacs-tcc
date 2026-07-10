@@ -318,9 +318,15 @@ Long id;
 String nomeExperimento;
 LocalDateTime dataExperimento;
 String observacoes;
+Long idUsuario;
 ```
 
 `observacoes` deverá ser persistido em campo de texto longo.
+
+Regras principais:
+
+- cada experimento pertence obrigatoriamente a um único usuário;
+- `idUsuario` deve referenciar um usuário existente.
 
 ### 7.3 `Coluna`
 
@@ -448,6 +454,8 @@ Regras:
 ```text
 Experimento 1:N Coluna
 
+Usuario 1:N Experimento
+
 Coluna 1:N DadoColuna
 
 Coluna 1:N Curva, no papel de eixo X
@@ -459,7 +467,7 @@ Grafico N:N Curva
 
 A relação muitos-para-muitos entre `Grafico` e `Curva` é representada por `CurvaGrafico`.
 
-Nesta versão, `Usuario` já pertence ao modelo oficial, mas a relação direta com `Experimento` ainda não está representada por coluna na tabela `Experimento`. Não inventar essa chave estrangeira sem nova decisão arquitetônica.
+Nesta versão, a relação entre `Usuario` e `Experimento` é representada por `Experimento.idUsuario`. Cada experimento pertence obrigatoriamente a um único usuário.
 
 ---
 

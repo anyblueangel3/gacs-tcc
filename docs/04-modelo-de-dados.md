@@ -280,6 +280,8 @@ A numeração deverá começar em 1 e crescer sequencialmente dentro de cada gr�
 # Relacionamentos
 
 ```text
+Usuario 1:N Experimento
+
 Experimento 1:N Coluna
 
 Coluna 1:N DadoColuna
@@ -299,12 +301,13 @@ A relação muitos-para-muitos entre `Grafico` e `Curva` é representada por `Cu
 
 ```text
 Usuario
-
-Experimento
     |
-    +-- Coluna
-           |
-           +-- DadoColuna
+    +-- Experimento
+            +-- idUsuario -> Usuario
+            |
+            +-- Coluna
+                   |
+                   +-- DadoColuna
 
 Curva
     +-- idColunaX -> Coluna

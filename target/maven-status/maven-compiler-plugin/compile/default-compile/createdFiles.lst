@@ -1,7 +1,9 @@
 br\uel\gacs\App.class
+br\uel\gacs\model\CurvaGrafico.class
 br\uel\gacs\model\Usuario.class
 br\uel\gacs\model\Experimento.class
+br\uel\gacs\model\Grafico.class
 br\uel\gacs\model\Coluna.class
+br\uel\gacs\model\Curva.class
 br\uel\gacs\model\DadoColuna.class
 br\uel\gacs\model\PerfilUsuario.class
-br\uel\gacs\model\TipoEixo.class
