@@ -14,6 +14,16 @@ O desenvolvimento é realizado de forma colaborativa entre o autor e o ChatGPT (
 
 ---
 
+## Equipe de trabalho do projeto GACS-TCC
+
+Professor Dr. Edison Laureto  
+Ronaldo Rodrigues Godoi  
+ChatGPT (OpenAI)  
+Codex - OpenAI's coding agent (OpenAI)  
+
+
+---
+
 ## Primeira versão
 
 A primeira versão do GACS será direcionada ao estudo e à caracterização elétrica de:

@@ -83,6 +83,7 @@ Representa a unidade central do trabalho experimental.
 | `nomeExperimento` | `String` | Nome do experimento |
 | `dataExperimento` | `LocalDateTime` | Data e hora do experimento |
 | `observacoes` | `String` | Texto livre armazenado em campo de texto longo |
+| `idUsuario` | `Long` | é usado para dizer de quem é um experimento |
 
 ### Cardinalidade
 
