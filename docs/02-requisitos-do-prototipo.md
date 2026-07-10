@@ -1,74 +1,91 @@
-# 02 -- Requisitos do Protótipo
+# 02 — Requisitos do Protótipo
 
 ## Objetivo
 
-Definir o escopo funcional da primeira versão do GACS.
+O primeiro protótipo do GACS deve permitir que um usuário registre experimentos, organize dados experimentais, forme curvas, monte gráficos e preserve essas informações em banco de dados.
 
-# Requisitos funcionais
+---
 
-RF-01 -- Criar, editar e consultar experimentos.
+# Requisitos Funcionais
 
-RF-02 -- Registrar observações do experimento.
+## RF01 – Usuários
+- Autenticar usuários cadastrados.
+- Controlar perfil de acesso por `PerfilUsuario`.
 
-RF-03 -- Criar colunas de dados associadas a um experimento.
+## RF02 – Experimentos
+- Criar, editar, excluir e consultar experimentos.
+- Registrar nome, data e observações.
 
-RF-04 -- Inserir valores manualmente.
+## RF03 – Colunas
+- Criar até 50 colunas por experimento.
+- Exibir rótulos no padrão A, B, ..., AX.
+- Permitir definir `nomeColuna`.
 
-RF-05 -- Colar dados diretamente de planilhas.
+## RF04 – Entrada de dados
+- Digitação direta em tabela.
+- Colagem de blocos do Excel.
+- Importação CSV.
+- Até 10.000 medidas por coluna.
 
-RF-06 -- Importar arquivos CSV delimitados por ponto e vírgula.
+## RF05 – Curvas
+- Criar curvas associando uma coluna X e uma coluna Y.
+- Permitir reutilizar uma mesma coluna X em várias curvas.
+- Nomear cada curva.
 
-RF-07 -- Aceitar valores em notação científica.
+## RF06 – Gráficos
+- Criar gráficos.
+- Adicionar uma ou várias curvas ao gráfico.
+- Definir a ordem das curvas por `numeroCurva`.
+- Permitir reutilizar uma curva em diferentes gráficos.
 
-RF-08 -- Associar cada coluna Y à sua coluna X correspondente.
+## RF07 – Visualização
+- Plotar todas as curvas pertencentes ao gráfico.
+- Exibir legenda conforme `numeroCurva`.
 
-RF-09 -- Armazenar os dados em banco de dados.
+## RF08 – Persistência
+- Salvar e recuperar todas as sete entidades oficiais:
+  - Usuario
+  - Experimento
+  - Coluna
+  - DadoColuna
+  - Curva
+  - Grafico
+  - CurvaGrafico
 
-RF-10 -- Recuperar experimentos salvos.
+---
 
-RF-11 -- Gerar gráficos a partir das colunas X e Y.
+# Requisitos Não Funcionais
 
-RF-12 -- Disponibilizar os pares (x,y) para os algoritmos de
-caracterização.
+- Java 21.
+- JavaFX.
+- Maven.
+- MySQL 8.
+- JDBC.
+- Interface semelhante a planilha.
+- Aceitar ponto e vírgula como separador CSV.
+- Aceitar vírgula ou ponto decimal.
+- Aceitar notação científica.
 
-# Requisitos não funcionais
+---
 
-RNF-01 -- Java 21.
+# Restrições
 
-RNF-02 -- JavaFX para a interface.
+- Máximo de 50 colunas por experimento.
+- Máximo de 10.000 medidas por coluna.
+- Não criar tabelas além das sete oficiais nesta versão.
+- Não utilizar frameworks de persistência.
 
-RNF-03 -- Maven para gerenciamento do projeto.
+---
 
-RNF-04 -- MySQL 8 como banco de dados inicial.
+# Fluxo principal
 
-RNF-05 -- JDBC para persistência inicial.
-
-RNF-06 -- Arquitetura em camadas.
-
-RNF-07 -- Código documentado e organizado.
-
-RNF-08 -- Domínio modelado em português.
-
-RNF-09 -- Modularidade e baixo acoplamento.
-
-RNF-10 -- Evolução incremental sem perda de compatibilidade sempre que
-possível.
-
-# Fora do escopo da primeira versão
-
--   aquisição automática de dados;
--   múltiplos tipos avançados de caracterização;
--   gerenciamento avançado de usuários e permissões;
--   integração com equipamentos laboratoriais;
--   geração completa de relatórios científicos.
-
-# Critério de sucesso do protótipo
-
-O protótipo será considerado bem-sucedido quando permitir que um
-operador:
-
-1.  crie um experimento;
-2.  insira ou importe dados;
-3.  gere um gráfico;
-4.  disponibilize os dados para caracterização;
-5.  salve e recupere o experimento posteriormente.
+```text
+Login
+→ Experimento
+→ Colunas
+→ Entrada de dados
+→ Curvas
+→ Gráficos
+→ Visualização
+→ Persistência
+```

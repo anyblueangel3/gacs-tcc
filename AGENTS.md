@@ -18,7 +18,7 @@ Ronaldo Rodrigues Godoi
 
 O GACS é um projeto acadêmico de TCC vinculado ao Bacharelado em Física da Universidade Estadual de Londrina (UEL).
 
-O software deve refletir simultaneamente:
+O software deve refletir:
 
 - rigor científico;
 - clareza de modelagem;
@@ -30,52 +30,53 @@ O software deve refletir simultaneamente:
 
 ## 2. Objetivo principal do protótipo
 
-O protótipo inicial deve oferecer um fluxo funcional e coerente para:
+O protótipo inicial deve oferecer um fluxo funcional para:
 
 1. criar e registrar um experimento;
 2. inserir dados experimentais;
 3. organizar os dados em colunas;
-4. associar colunas X e Y;
-5. gerar gráficos;
-6. analisar ou caracterizar curvas;
+4. formar curvas pela associação entre colunas X e Y;
+5. reunir curvas em gráficos;
+6. analisar ou caracterizar as curvas;
 7. salvar e recuperar os dados.
 
-O núcleo do protótipo é:
+Fluxo central:
 
 ```text
-Entrada de dados
-→ geração de gráfico
-→ análise/caracterização
+Experimento
+→ Colunas
+→ Curvas
+→ Gráficos
+→ Análise/Caracterização
 ```
 
-Essas três partes devem utilizar a mesma estrutura de dados e permanecer consistentes entre si.
+A entrada de dados, a geração de gráficos e a caracterização devem utilizar a mesma estrutura persistida.
 
 ---
 
-## 3. Princípios fundamentais do sistema
+## 3. Princípios fundamentais
 
 ### 3.1 Simplicidade para o operador
-
-O operador não deve ser obrigado a preencher cadastros detalhados antes de utilizar o núcleo do sistema.
 
 O fluxo mínimo deve permitir:
 
 ```text
 Criar experimento
 → digitar, colar ou importar dados
-→ selecionar ou definir colunas X e Y
-→ gerar gráfico
+→ nomear colunas
+→ criar curvas
+→ compor gráficos
 → analisar ou caracterizar
 → salvar
 ```
 
-Cadastros adicionais poderão ser vinculados futuramente, mas não devem bloquear o fluxo rápido.
+Cadastros futuros não devem bloquear o uso do núcleo experimental.
 
 ### 3.2 Detalhamento progressivo
 
-O sistema deve permitir que um experimento seja criado inicialmente com poucos dados e complementado posteriormente.
+Um experimento pode ser criado com poucos dados e complementado posteriormente.
 
-O protótipo não deve exigir, desde o início:
+Não exigir nesta versão:
 
 - cadastro completo do componente;
 - fabricante;
@@ -83,66 +84,59 @@ O protótipo não deve exigir, desde o início:
 - encapsulamento;
 - equipamento;
 - laboratório;
-- operador;
 - condições experimentais completas.
-
-Esses dados poderão ser adicionados em módulos futuros.
 
 ### 3.3 Modularidade
 
-O GACS deve ser estruturado em módulos ou camadas com responsabilidades claras.
-
-Os módulos devem poder evoluir com baixo acoplamento, embora compartilhem o mesmo banco de dados.
+O sistema deve utilizar camadas com responsabilidades claras e baixo acoplamento.
 
 ### 3.4 Coerência tecnológica
 
-A pilha tecnológica deve permanecer simples e coesa.
-
-Evitar a inclusão de frameworks, bibliotecas ou ferramentas adicionais sem necessidade comprovada.
+Evitar frameworks, bibliotecas e ferramentas adicionais sem necessidade comprovada.
 
 ### 3.5 Evolução controlada
 
 Não alterar decisões arquitetônicas consolidadas sem autorização explícita.
 
-Quando uma solução futura exigir mudança estrutural, documentar:
+Quando uma mudança estrutural for necessária, registrar:
 
-- o problema;
-- a limitação do modelo atual;
-- as alternativas;
-- o impacto;
-- a proposta de migração.
+- problema;
+- limitação atual;
+- alternativas;
+- impacto;
+- proposta de migração.
+
+### 3.6 Escopo fechado do modelo atual
+
+O banco de dados desta versão terá exatamente sete tabelas:
+
+```text
+Usuario
+Experimento
+Coluna
+DadoColuna
+Curva
+Grafico
+CurvaGrafico
+```
+
+Não criar novas tabelas sem decisão arquitetônica explícita.
 
 ---
 
 ## 4. Tecnologias definidas
 
-### 4.1 Linguagem
+- **Linguagem:** Java 21
+- **Interface gráfica:** JavaFX
+- **Gerenciamento e compilação:** Maven
+- **Banco de dados:** MySQL 8
+- **Persistência inicial:** JDBC
 
-- Java 21
-
-### 4.2 Interface gráfica
-
-- JavaFX
-
-### 4.3 Gerenciamento de dependências e compilação
-
-- Maven
-
-### 4.4 Banco de dados
-
-- MySQL 8
-
-### 4.5 Persistência inicial
-
-- JDBC
-
-Não introduzir JPA, Hibernate, Spring, Spring Boot ou outro ORM nesta fase, salvo decisão posterior expressa.
+Não introduzir JPA, Hibernate, Spring, Spring Boot, Lombok ou outro framework sem autorização expressa.
 
 ---
 
 ## 5. Organização arquitetônica
-
-A arquitetura inicial deve utilizar separação em camadas.
 
 Estrutura de pacotes prevista:
 
@@ -169,8 +163,8 @@ Responsável por:
 
 Responsável por:
 
-- interação entre telas JavaFX e serviços;
-- tratamento de eventos de interface;
+- integração entre telas JavaFX e serviços;
+- eventos de interface;
 - validações de interface;
 - atualização de tabelas, campos e gráficos.
 
@@ -180,10 +174,10 @@ Controllers não devem conter SQL.
 
 Responsável por:
 
-- acesso ao banco de dados;
-- operações CRUD;
+- acesso ao banco;
+- CRUD;
 - consultas SQL;
-- conversão entre registros do banco e objetos de modelo.
+- conversão entre registros e objetos de modelo.
 
 DAOs não devem conter regras de interface.
 
@@ -191,10 +185,10 @@ DAOs não devem conter regras de interface.
 
 Responsável por:
 
-- representar entidades e dados do domínio;
+- representar as entidades do domínio;
 - armazenar estado;
-- oferecer validações simples e coerentes com a entidade;
-- refletir o modelo lógico definido.
+- refletir o modelo lógico definido;
+- oferecer apenas validações simples da própria entidade.
 
 Classes de `model` não devem executar SQL nem manipular componentes JavaFX.
 
@@ -204,27 +198,89 @@ Responsável por:
 
 - regras de negócio;
 - coordenação entre DAOs;
-- validações que dependem de mais de uma entidade;
+- validações entre entidades;
 - operações transacionais;
-- preparação dos dados para gráfico e análise;
+- preparação de curvas e gráficos;
 - importação, normalização e tratamento de dados.
 
 ### 5.6 `util`
 
-Responsável por utilitários genéricos e reutilizáveis, como:
+Responsável por utilitários genéricos, como:
 
 - formatação numérica;
 - leitura de CSV;
-- validação de notação científica;
+- notação científica;
 - conversão de separadores decimais;
-- tratamento de datas;
-- mensagens técnicas.
+- conversão de rótulos de colunas;
+- tratamento de datas.
 
 Evitar transformar `util` em depósito de responsabilidades indefinidas.
 
 ---
 
-## 6. Modelo de dados inicial aceito
+## 6. Padrão de nomenclatura do banco e do domínio
+
+### 6.1 Tabelas
+
+Usar nomes no singular e em português:
+
+```text
+Usuario
+Experimento
+Coluna
+DadoColuna
+Curva
+Grafico
+CurvaGrafico
+```
+
+### 6.2 Chaves primárias
+
+Toda tabela com chave primária própria utiliza:
+
+```text
+id
+```
+
+Exemplos:
+
+```text
+Usuario.id
+Experimento.id
+Coluna.id
+Curva.id
+Grafico.id
+```
+
+### 6.3 Chaves estrangeiras
+
+Usar:
+
+```text
+id + nome da entidade referenciada
+```
+
+Exemplos:
+
+```text
+idExperimento
+idColuna
+idColunaX
+idColunaY
+idGrafico
+idCurva
+```
+
+### 6.4 Classes e atributos
+
+- classes: PascalCase;
+- atributos e métodos: camelCase;
+- nomes do domínio em português;
+- nomes técnicos consagrados podem permanecer em inglês, como DAO, CSV, JavaFX e JDBC.
+
+---
+
+## 7. Modelo de dados oficial
 
 Banco de dados:
 
@@ -232,577 +288,12 @@ Banco de dados:
 DadosGACS
 ```
 
-O núcleo inicial é composto por três entidades:
-
-```text
-Experimento
-Coluna
-DadoColuna
-```
-
-### 6.1 Experimento
-
-Representa a unidade central de registro do trabalho experimental.
-
-Campos inicialmente definidos:
-
-```text
-idExperimento
-nomeExperimento
-dataExperimento
-observacoes
-```
-
-Observações:
-
-- `idExperimento` identifica unicamente o experimento;
-- `nomeExperimento` permite identificação amigável;
-- `dataExperimento` registra data e hora;
-- `observacoes` armazena texto livre;
-- um experimento pode existir sem cadastro detalhado de componente;
-- um experimento possui uma ou mais colunas.
-
-### 6.2 Coluna
-
-Representa uma coluna de grandeza ou dados experimentais.
-
-Campos inicialmente definidos:
-
-```text
-idColuna
-idExperimento
-nomeColuna
-tipoEixo
-idColunaX
-```
-
-Significado:
-
-- `idColuna` identifica unicamente a coluna;
-- `idExperimento` indica o experimento ao qual a coluna pertence;
-- `nomeColuna` é o cabeçalho apresentado ao operador;
-- `tipoEixo` indica o papel inicial da coluna, X ou Y;
-- `idColunaX` referencia a coluna X associada quando a coluna atual for Y.
-
-### 6.3 DadoColuna
-
-Representa um único valor medido pertencente a uma coluna.
-
-Campos inicialmente definidos:
-
-```text
-idDado
-idColuna
-numeroDaMedida
-valorMedida
-```
-
-Significado:
-
-- `idDado` identifica unicamente o valor;
-- `idColuna` informa a coluna proprietária;
-- `numeroDaMedida` identifica a posição ou linha lógica da medida;
-- `valorMedida` armazena o valor numérico.
-
----
-
-## 7. Regras de associação entre colunas X e Y
-
-### 7.1 Regra para coluna X
-
-Quando:
-
-```text
-tipoEixo = X
-```
-
-então:
-
-```text
-idColunaX = NULL
-```
-
-Uma coluna X não referencia outra coluna X no modelo inicial.
-
-### 7.2 Regra para coluna Y
-
-Quando:
-
-```text
-tipoEixo = Y
-```
-
-então:
-
-```text
-idColunaX != NULL
-```
-
-A coluna Y deve apontar para a coluna X utilizada como base.
-
-### 7.3 Restrição de experimento
-
-A coluna Y e a coluna X referenciada devem pertencer ao mesmo experimento.
-
-### 7.4 Um X compartilhado por vários Y
-
-O modelo deve permitir:
-
-```text
-X1 → Y1
-X1 → Y2
-X1 → Y3
-```
-
-Exemplo:
-
-```text
-VDS → IDS para VGS = 1 V
-VDS → IDS para VGS = 2 V
-VDS → IDS para VGS = 3 V
-```
-
-### 7.5 Um X diferente para cada Y
-
-O modelo deve permitir:
-
-```text
-X1 → Y1
-X2 → Y2
-X3 → Y3
-```
-
-### 7.6 Limitação conhecida
-
-No modelo inicial, `tipoEixo` e `idColunaX` representam o pareamento principal de cada coluna Y.
-
-Uma entidade formal `Curva` não será criada nesta etapa.
-
-Caso futuramente seja necessário:
-
-- reutilizar a mesma coluna em vários papéis;
-- associar a mesma Y a diferentes X;
-- salvar múltiplas composições gráficas independentes;
-- compartilhar curvas em vários gráficos;
-
-a modelagem poderá ser revisada e o relacionamento poderá ser extraído para uma entidade específica.
-
-Não antecipar essa tabela sem autorização.
-
----
-
-## 8. Regras para os dados medidos
-
-### 8.1 Pareamento das medidas
-
-Os valores X e Y são associados por:
-
-```text
-numeroDaMedida
-```
-
-Exemplo:
-
-```text
-X, medida 1 ↔ Y, medida 1
-X, medida 2 ↔ Y, medida 2
-X, medida 3 ↔ Y, medida 3
-```
-
-### 8.2 Unicidade
-
-Deve existir no máximo um valor para cada combinação:
-
-```text
-idColuna + numeroDaMedida
-```
-
-O banco deverá futuramente aplicar restrição única para essa combinação.
-
-### 8.3 Ordem
-
-Os dados devem ser recuperados e apresentados preferencialmente em ordem crescente de `numeroDaMedida`.
-
-### 8.4 Dados faltantes
-
-O tratamento definitivo de dados ausentes será definido posteriormente.
-
-Não inventar preenchimento automático com zero.
-
-Não interpolar valores automaticamente sem solicitação explícita.
-
----
-
-## 9. Entrada de dados
-
-O GACS deverá aceitar:
-
-### 9.1 Digitação manual
-
-O usuário poderá inserir os valores diretamente em uma tabela editável.
-
-### 9.2 Colagem direta
-
-O usuário poderá copiar dados de uma planilha, como Excel ou software semelhante, e colá-los diretamente na tabela do GACS.
-
-### 9.3 Importação CSV
-
-O sistema deverá importar arquivos CSV usando:
-
-```text
-;
-```
-
-como separador padrão de colunas.
-
-Exemplo:
-
-```csv
-VDS;IDS
-0,0;1,20E-9
-0,5;3,70E-7
-1,0;2,15E-5
-```
-
-### 9.4 Separador decimal
-
-O sistema deverá ser preparado para aceitar:
-
-- vírgula decimal;
-- ponto decimal.
-
-A conversão deve ocorrer antes da persistência numérica.
-
-### 9.5 Cabeçalhos
-
-Os cabeçalhos importados devem ser utilizados inicialmente como `nomeColuna`.
-
-### 9.6 Validação
-
-Valores inválidos devem gerar mensagem clara.
-
-Não substituir silenciosamente valores inválidos por zero.
-
----
-
-## 10. Notação científica
-
-A notação científica é uma característica obrigatória do GACS.
-
-### 10.1 Entrada
-
-O sistema deve aceitar valores como:
-
-```text
-1.23E-6
-1,23E-6
--4.50E+3
-```
-
-### 10.2 Armazenamento
-
-Os valores devem ser armazenados como tipos numéricos.
-
-Não armazenar `valorMedida` apenas como texto formatado.
-
-### 10.3 Apresentação
-
-A interface deve ser capaz de exibir valores de forma consistente em notação científica.
-
-Exemplo:
-
-```text
-1.2300E-06
-```
-
-### 10.4 Precisão
-
-Não aplicar arredondamento destrutivo durante a importação ou persistência.
-
-A quantidade de casas exibidas poderá ser configurada posteriormente.
-
----
-
-## 11. Gráficos
-
-A implementação de gráficos ainda não pertence à primeira tarefa de código, mas o modelo deve permanecer compatível com ela.
-
-### 11.1 Fonte dos dados
-
-Um gráfico será construído a partir de:
-
-- uma coluna Y;
-- sua coluna X associada;
-- os valores pareados por `numeroDaMedida`.
-
-### 11.2 Múltiplas curvas
-
-Um gráfico deverá poder apresentar várias colunas Y.
-
-Essas colunas Y poderão:
-
-- compartilhar a mesma coluna X;
-- utilizar colunas X diferentes.
-
-### 11.3 JavaFX
-
-A visualização gráfica deverá ser implementada prioritariamente com JavaFX, preservando a diretriz de coesão tecnológica.
-
-### 11.4 Não criar estruturas prematuras
-
-Não criar nesta etapa:
-
-- tabela `Grafico`;
-- tabela `Curva`;
-- tabela `GraficoCurva`;
-- classes de visualização;
-- classes de análise.
-
-Essas estruturas serão projetadas quando seus requisitos estiverem suficientemente claros.
-
----
-
-## 12. Análise e caracterização
-
-A análise deverá receber os mesmos pares numéricos usados pelo gráfico:
-
-```text
-(x1, y1)
-(x2, y2)
-...
-(xn, yn)
-```
-
-A origem dos dados não deve alterar o algoritmo de análise.
-
-Os dados podem vir de:
-
-- digitação manual;
-- colagem;
-- CSV;
-- banco de dados;
-- futura aquisição automática.
-
-A caracterização inicial terá foco em componentes semicondutores, especialmente:
-
-- diodos;
-- FETs.
-
-O professor orientador indicou interesse inicial em FETs.
-
-Não implementar algoritmos físicos de caracterização nesta primeira tarefa.
-
----
-
-## 13. Convenções de código
-
-### 13.1 Idioma
-
-Usar português nos nomes do domínio:
-
-```java
-Experimento
-Coluna
-DadoColuna
-TipoEixo
-```
-
-Evitar mistura desnecessária de português e inglês.
-
-Nomes técnicos consagrados podem permanecer em inglês quando apropriado, como:
-
-- DAO;
-- CSV;
-- JavaFX;
-- JDBC.
-
-### 13.2 Classes
-
-Usar PascalCase.
-
-Exemplo:
-
-```java
-DadoColuna
-```
-
-### 13.3 Atributos e métodos
-
-Usar camelCase.
-
-Exemplos:
-
-```java
-idExperimento
-numeroDaMedida
-buscarPorExperimento()
-```
-
-### 13.4 Constantes e enums
-
-Usar letras maiúsculas.
-
-Exemplo:
-
-```java
-X
-Y
-```
-
-### 13.5 Identificadores
-
-Usar tipos anuláveis para IDs ainda não persistidos.
-
-Preferência inicial:
-
-```java
-Long
-```
-
-em vez de:
-
-```java
-long
-```
-
-Um objeto novo poderá possuir ID nulo até ser salvo.
-
-### 13.6 Datas
-
-Usar API moderna de datas do Java.
-
-Preferência inicial:
-
-```java
-LocalDateTime
-```
-
-Não usar `java.util.Date`.
-
-### 13.7 Valores medidos
-
-Preferência inicial:
-
-```java
-Double
-```
-
-A escolha poderá ser reavaliada caso os requisitos de precisão científica indiquem necessidade de `BigDecimal`.
-
-Não mudar para `BigDecimal` sem discussão explícita sobre precisão, gráficos e desempenho.
-
-### 13.8 Comentários e documentação
-
-Adicionar Javadoc curto e útil em:
-
-- classes públicas;
-- enums;
-- métodos públicos com regra não óbvia.
-
-Evitar comentários que apenas repitam o código.
-
-### 13.9 Construtores
-
-As classes de modelo poderão possuir:
-
-- construtor sem argumentos;
-- construtor com todos os campos relevantes.
-
-### 13.10 Getters e setters
-
-Criar getters e setters convencionais nesta fase.
-
-Não introduzir Lombok.
-
-### 13.11 Imutabilidade
-
-Não impor imutabilidade completa nesta etapa, pois o projeto utilizará formulários, JDBC e edição de dados.
-
-### 13.12 Records
-
-Não utilizar `record` para as entidades persistentes iniciais.
-
----
-
-## 14. Validação das entidades
-
-### 14.1 Responsabilidade da classe `Coluna`
-
-A classe poderá validar regras simples, como:
-
-```text
-X não pode ter idColunaX
-Y deve ter idColunaX
-```
-
-### 14.2 Responsabilidade do serviço
-
-A confirmação de que a coluna X existe e pertence ao mesmo experimento deve ocorrer na camada `service` e também ser protegida pelo banco.
-
-### 14.3 Defesa em camadas
-
-As regras importantes deverão ser reforçadas em:
-
-- interface;
-- service;
-- banco de dados.
-
-Não depender de uma única camada para consistência.
-
----
-
-## 15. Estrutura inicial das classes `model`
-
-A primeira implementação deve criar:
-
-```text
-src/main/java/br/uel/gacs/model/TipoEixo.java
-src/main/java/br/uel/gacs/model/PerfilUsuario.java
-src/main/java/br/uel/gacs/model/Usuario.java
-src/main/java/br/uel/gacs/model/Experimento.java
-src/main/java/br/uel/gacs/model/Coluna.java
-src/main/java/br/uel/gacs/model/DadoColuna.java
-```
-
-`Usuario` e `PerfilUsuario` são tipos adicionais aprovados pela equipe para esta etapa.
-
-### 15.1 `TipoEixo`
-
-Valores:
-
-```java
-X,
-Y
-```
-
-### 15.2 `Experimento`
+### 7.1 `Usuario`
 
 Atributos:
 
 ```java
-Long idExperimento;
-String nomeExperimento;
-LocalDateTime dataExperimento;
-String observacoes;
-```
-
-### 15.3 `PerfilUsuario`
-
-Valores:
-
-```java
-ADMINISTRADOR,
-PESQUISADOR,
-OPERADOR,
-CONSULTA
-```
-
-### 15.4 `Usuario`
-
-Atributos:
-
-```java
-Long idUsuario;
+Long id;
 String nome;
 String email;
 String senhaHash;
@@ -812,126 +303,525 @@ LocalDateTime dataCriacao;
 LocalDateTime dataUltimaAlteracao;
 ```
 
-### 15.5 `Coluna`
+Regras principais:
+
+- a senha nunca deve ser armazenada em texto puro;
+- `perfil` é representado por enum;
+- `PerfilUsuario` não é tabela nesta versão.
+
+### 7.2 `Experimento`
 
 Atributos:
 
 ```java
-Long idColuna;
-Long idExperimento;
-String nomeColuna;
-TipoEixo tipoEixo;
-Long idColunaX;
+Long id;
+String nomeExperimento;
+LocalDateTime dataExperimento;
+String observacoes;
 ```
 
-### 15.6 `DadoColuna`
+`observacoes` deverá ser persistido em campo de texto longo.
+
+### 7.3 `Coluna`
 
 Atributos:
 
 ```java
-Long idDado;
+Long id;
+Long idExperimento;
+Short rotulo;
+String nomeColuna;
+```
+
+Regras principais:
+
+- cada coluna pertence a um experimento;
+- cada experimento aceita no máximo 50 colunas;
+- `rotulo` representa a posição visual A, B, C, ..., AX;
+- o valor numérico de `rotulo` será convertido pela aplicação;
+- o rótulo somente existe quando a coluna possui dados;
+- depois de atribuído, o rótulo permanece associado à coluna;
+- o rótulo deve ser único dentro do experimento.
+
+Conversão prevista:
+
+```text
+1  -> A
+2  -> B
+26 -> Z
+27 -> AA
+50 -> AX
+```
+
+`rotulo` não é enum e não é tabela. É um valor numérico limitado e convertido pela aplicação.
+
+### 7.4 `DadoColuna`
+
+Atributos:
+
+```java
 Long idColuna;
 Integer numeroDaMedida;
 Double valorMedida;
 ```
 
+`DadoColuna` não possui `id` próprio.
+
+Sua identificação é composta por:
+
+```text
+idColuna + numeroDaMedida
+```
+
+Regras:
+
+- a combinação deve ser única;
+- `numeroDaMedida` varia de 1 a 10.000;
+- cada coluna aceita no máximo 10.000 medidas;
+- os dados devem ser recuperados preferencialmente em ordem crescente de `numeroDaMedida`.
+
+### 7.5 `Curva`
+
+Atributos:
+
+```java
+Long id;
+String nome;
+Long idColunaX;
+Long idColunaY;
+```
+
+Regras:
+
+- `idColunaX` e `idColunaY` devem referenciar colunas existentes;
+- uma curva não pode usar a mesma coluna como X e Y;
+- as duas colunas devem pertencer ao mesmo experimento;
+- uma coluna pode participar de várias curvas;
+- uma mesma coluna X pode ser compartilhada por várias curvas;
+- uma coluna pode exercer papéis diferentes em curvas diferentes.
+
+Os pontos são pareados por `numeroDaMedida`:
+
+```text
+X, medida 1 ↔ Y, medida 1
+X, medida 2 ↔ Y, medida 2
+...
+```
+
+### 7.6 `Grafico`
+
+Atributos:
+
+```java
+Long id;
+String nome;
+```
+
+Um gráfico pode conter várias curvas.
+
+Uma curva pode participar de vários gráficos.
+
+### 7.7 `CurvaGrafico`
+
+Atributos:
+
+```java
+Long idGrafico;
+Integer numeroCurva;
+Long idCurva;
+```
+
+`CurvaGrafico` não possui `id` artificial próprio.
+
+Regras:
+
+- `idGrafico + numeroCurva` deve ser único;
+- `idGrafico + idCurva` deve ser único;
+- a mesma curva não pode ser adicionada duas vezes ao mesmo gráfico;
+- `numeroCurva` começa em 1;
+- `numeroCurva` define a ordem das curvas no gráfico e na legenda.
+
 ---
 
-## 16. Decisão inicial sobre relacionamentos nos modelos
+## 8. Relacionamentos
 
-Na primeira implementação, representar chaves estrangeiras por IDs:
+```text
+Experimento 1:N Coluna
+
+Coluna 1:N DadoColuna
+
+Coluna 1:N Curva, no papel de eixo X
+
+Coluna 1:N Curva, no papel de eixo Y
+
+Grafico N:N Curva
+```
+
+A relação muitos-para-muitos entre `Grafico` e `Curva` é representada por `CurvaGrafico`.
+
+Nesta versão, `Usuario` já pertence ao modelo oficial, mas a relação direta com `Experimento` ainda não está representada por coluna na tabela `Experimento`. Não inventar essa chave estrangeira sem nova decisão arquitetônica.
+
+---
+
+## 9. Enums
+
+Enums representam conjuntos pequenos, estáveis e fechados de valores.
+
+Enum confirmado:
+
+```text
+PerfilUsuario
+```
+
+Enums não devem ser transformados em tabelas nesta versão.
+
+Um enum somente deverá se tornar tabela se seus valores precisarem ser:
+
+- cadastrados pelo usuário;
+- alterados sem recompilar;
+- associados a atributos adicionais;
+- administrados dinamicamente.
+
+Não criar ou manter `TipoEixo`.
+
+Os papéis X e Y pertencem à entidade `Curva`, por meio de `idColunaX` e `idColunaY`.
+
+---
+
+## 10. Entrada de dados
+
+O GACS deverá aceitar:
+
+### 10.1 Digitação manual
+
+Valores inseridos diretamente em uma tabela editável.
+
+### 10.2 Colagem de planilha
+
+Dados copiados do Excel ou software semelhante.
+
+A interface deve utilizar:
+
+```text
+A, B, C, ..., Z, AA, ..., AX
+```
+
+como rótulos visuais de coluna.
+
+As linhas devem ser numeradas.
+
+### 10.3 Importação CSV
+
+Separador padrão:
+
+```text
+;
+```
+
+### 10.4 Separador decimal
+
+Aceitar:
+
+- vírgula decimal;
+- ponto decimal.
+
+A normalização deve ocorrer antes da persistência.
+
+### 10.5 Cabeçalhos
+
+Cabeçalhos importados devem alimentar inicialmente `nomeColuna`.
+
+### 10.6 Validação
+
+Valores inválidos devem gerar mensagem clara.
+
+Não substituir silenciosamente valores inválidos por zero.
+
+---
+
+## 11. Notação científica
+
+O sistema deve aceitar:
+
+```text
+1.23E-6
+1,23E-6
+-4.50E+3
+```
+
+Os valores devem ser armazenados numericamente como `Double`.
+
+Não armazenar `valorMedida` apenas como texto formatado.
+
+Não aplicar arredondamento destrutivo na importação ou persistência.
+
+A mudança para `BigDecimal` exige discussão explícita sobre precisão, gráficos e desempenho.
+
+---
+
+## 12. Gráficos e curvas
+
+### 12.1 Formação da curva
+
+Uma curva é formada por:
+
+- uma coluna X;
+- uma coluna Y;
+- pareamento pelo mesmo `numeroDaMedida`.
+
+### 12.2 Composição do gráfico
+
+Um gráfico reúne curvas por meio de `CurvaGrafico`.
+
+### 12.3 Ordem
+
+`numeroCurva` determina:
+
+- ordem de apresentação;
+- ordem na legenda;
+- sequência de processamento;
+- reorganização futura das séries.
+
+### 12.4 Seleção de curvas
+
+O usuário poderá selecionar curvas com faixas de dados que produzam melhor visualização conjunta.
+
+### 12.5 JavaFX
+
+A visualização gráfica deverá ser implementada prioritariamente com JavaFX.
+
+Não duplicar os dados apenas para gerar o gráfico. Utilizar as entidades persistidas.
+
+---
+
+## 13. Análise e caracterização
+
+A análise deverá receber os mesmos pares numéricos utilizados pelo gráfico:
+
+```text
+(x1, y1)
+(x2, y2)
+...
+(xn, yn)
+```
+
+A origem dos dados não deve alterar o algoritmo:
+
+- digitação;
+- colagem;
+- CSV;
+- banco;
+- futura aquisição automática.
+
+O foco inicial de caracterização será em:
+
+- diodos;
+- FETs.
+
+Não implementar algoritmos físicos sem especificação funcional e científica documentada.
+
+---
+
+## 14. Diretrizes Java 21
+
+### 14.1 IDs
+
+Usar `Long` para identificadores, permitindo `null` antes da persistência.
+
+### 14.2 Datas
+
+Usar:
+
+```java
+LocalDateTime
+```
+
+Não usar `java.util.Date`.
+
+### 14.3 Valores medidos
+
+Usar inicialmente:
+
+```java
+Double
+```
+
+### 14.4 Entidades
+
+Entidades persistentes devem ser classes convencionais mutáveis.
+
+Não utilizar `record` para:
+
+- `Usuario`;
+- `Experimento`;
+- `Coluna`;
+- `DadoColuna`;
+- `Curva`;
+- `Grafico`;
+- `CurvaGrafico`.
+
+### 14.5 Construtores
+
+As classes poderão possuir:
+
+- construtor sem argumentos;
+- construtor com todos os campos.
+
+### 14.6 Getters e setters
+
+Criar getters e setters convencionais.
+
+### 14.7 Comentários
+
+Adicionar Javadoc curto e útil em classes públicas, enums e regras não óbvias.
+
+Evitar comentários que apenas repitam o código.
+
+### 14.8 Recursos modernos
+
+Usar apenas recursos estáveis do Java 21.
+
+Não usar recursos preview nem `--enable-preview`.
+
+---
+
+## 15. Representação dos relacionamentos no pacote `model`
+
+Na etapa atual, representar chaves estrangeiras por IDs:
 
 ```java
 Long idExperimento;
 Long idColuna;
 Long idColunaX;
+Long idColunaY;
+Long idGrafico;
+Long idCurva;
 ```
 
-Não substituir nesta etapa por:
+Não substituir sem decisão explícita por referências complexas como:
 
 ```java
 Experimento experimento;
 Coluna colunaX;
-List<Coluna> colunas;
-List<DadoColuna> dados;
+List<Curva> curvas;
 ```
 
-A decisão reduz complexidade inicial e mantém proximidade com JDBC e o modelo relacional.
-
-Relacionamentos por objetos poderão ser introduzidos posteriormente, se houver benefício claro.
+A representação por IDs mantém proximidade com JDBC e com o modelo relacional.
 
 ---
 
-## 17. Restrições para a primeira tarefa do Codex
+## 16. Validação e integridade
 
-Ao receber a tarefa de implementar os modelos, o agente deve:
+Aplicar defesa em camadas:
 
-1. ler este arquivo integralmente;
-2. verificar a estrutura atual do projeto;
-3. criar os pacotes ausentes;
-4. implementar somente as classes do pacote `model`;
-5. não criar banco, DAO, service, controller ou telas;
-6. não adicionar dependências;
-7. não modificar o `pom.xml` sem necessidade de compilação;
-8. não introduzir Lombok;
-9. não introduzir frameworks;
-10. não criar entidade `Curva`;
-11. não criar entidade `Grafico`;
-12. não criar entidade `Componente`;
-13. não alterar nomes oficiais do projeto;
-14. não traduzir classes do domínio para inglês;
-15. executar a compilação Maven;
-16. corrigir apenas erros relacionados à tarefa;
-17. apresentar resumo dos arquivos criados.
+- interface;
+- service;
+- banco de dados.
+
+### 16.1 Validações simples da entidade
+
+Exemplos:
+
+- limites básicos de `rotulo`;
+- limites básicos de `numeroDaMedida`;
+- `idColunaX` diferente de `idColunaY`;
+- `numeroCurva` maior ou igual a 1.
+
+### 16.2 Validações do serviço
+
+Exemplos:
+
+- colunas X e Y pertencem ao mesmo experimento;
+- rótulo é único no experimento;
+- curva não se repete no gráfico;
+- sequência de `numeroCurva` é válida;
+- máximo de 50 colunas;
+- máximo de 10.000 medidas.
+
+### 16.3 Restrições do banco
+
+As regras de unicidade e integridade referencial devem ser protegidas pelo banco quando o esquema SQL for implementado.
 
 ---
 
-## 18. Comando recomendado para a primeira implementação
+## 17. Classes oficiais do pacote `model`
 
-O pedido inicial ao Codex deve ser:
+O pacote deverá conter:
 
 ```text
-Leia integralmente o arquivo AGENTS.md.
+PerfilUsuario
+Usuario
+Experimento
+Coluna
+DadoColuna
+Curva
+Grafico
+CurvaGrafico
+```
 
-Crie, se ainda não existirem, a estrutura de pacotes definida para o projeto GACS.
+Não criar:
 
-Implemente somente as classes do pacote br.uel.gacs.model:
+```text
+TipoEixo
+```
 
-- TipoEixo
+Não adicionar novas entidades ao pacote `model` sem autorização.
+
+---
+
+## 18. Restrições para tarefas de implementação
+
+Ao implementar ou corrigir o modelo, o agente deve:
+
+1. ler este arquivo integralmente;
+2. consultar `docs/04-modelo-de-dados.md`;
+3. verificar a estrutura atual do projeto;
+4. preservar os nomes exatos das classes e atributos;
+5. não criar tabelas ou entidades extras;
+6. não introduzir frameworks;
+7. não introduzir Lombok;
+8. não modificar o `pom.xml` sem necessidade real;
+9. não implementar DAO, service, controller ou interface quando a tarefa estiver restrita ao pacote `model`;
+10. executar `mvn clean compile`;
+11. corrigir apenas erros relacionados à tarefa;
+12. apresentar resumo claro dos arquivos alterados.
+
+---
+
+## 19. Comando recomendado para correção do pacote `model`
+
+```text
+Leia integralmente o arquivo AGENTS.md e o arquivo docs/04-modelo-de-dados.md.
+
+Revise o pacote br.uel.gacs.model e alinhe-o ao modelo oficial de sete tabelas.
+
+As classes e o enum oficiais são:
+
 - PerfilUsuario
 - Usuario
 - Experimento
 - Coluna
 - DadoColuna
+- Curva
+- Grafico
+- CurvaGrafico
 
-Respeite rigorosamente os atributos, tipos, nomes, regras e restrições descritos no AGENTS.md.
+Respeite rigorosamente os nomes, tipos e atributos documentados.
 
-Não implemente DAOs, serviços, controllers, banco de dados, gráficos, análise ou interface nesta etapa.
+Remova do modelo qualquer dependência de TipoEixo.
+
+Não implemente DAOs, serviços, controllers, banco de dados, gráficos, análise ou interface nesta tarefa.
 
 Não adicione frameworks ou dependências.
 
-Ao final, execute mvn clean compile, corrija apenas eventuais erros de compilação relacionados à tarefa e apresente um resumo das alterações.
+Ao final, execute mvn clean compile, corrija apenas os erros relacionados à tarefa e apresente um resumo das alterações.
 ```
 
 ---
 
-## 19. Diretrizes para alterações futuras
+## 20. Documentação oficial
 
-Antes de implementar uma alteração estrutural, o agente deve:
-
-1. identificar a decisão existente;
-2. explicar a necessidade da mudança;
-3. indicar os arquivos afetados;
-4. preservar compatibilidade sempre que possível;
-5. solicitar decisão humana quando houver alternativas arquitetônicas relevantes.
-
-O agente não deve tomar decisões irreversíveis de arquitetura sozinho.
-
----
-
-## 20. Documentação futura prevista
-
-A documentação deverá evoluir para a seguinte estrutura:
+A documentação principal está organizada em:
 
 ```text
 docs/
@@ -941,48 +831,62 @@ docs/
 ├── 04-modelo-de-dados.md
 ├── 05-regras-de-negocio.md
 ├── 06-convencoes-de-codigo.md
-└── 07-roadmap.md
+└── 07-diretrizes-java21.md
 ```
 
-Este arquivo `AGENTS.md` deve permanecer como guia operacional resumido e autoritativo para agentes.
+Ordem de autoridade para implementação:
 
-Documentos mais extensos poderão detalhar decisões específicas.
+1. decisão humana mais recente registrada;
+2. `docs/04-modelo-de-dados.md`, para estrutura das tabelas;
+3. `AGENTS.md`, para execução e limites dos agentes;
+4. demais documentos especializados.
+
+Em caso de conflito, o agente deve interromper a ampliação do escopo e relatar a inconsistência.
 
 ---
 
-## 21. Estado atual do projeto
+## 21. Estado atual consolidado
 
-Decisões consolidadas:
+Decisões vigentes:
 
 - Java 21;
 - JavaFX;
 - Maven;
 - MySQL 8;
-- JDBC inicialmente;
-- nomes do domínio em português;
-- experimento como unidade central;
-- fluxo rápido de entrada, gráfico e análise;
+- JDBC;
+- domínio em português;
+- banco `DadosGACS`;
+- sete tabelas oficiais;
+- chave primária `id` nas tabelas que possuem identificador próprio;
+- chaves estrangeiras com nomes descritivos;
+- `DadoColuna` com chave composta;
+- `CurvaGrafico` sem `id` artificial;
+- `CurvaGrafico.numeroCurva` como ordem interna do gráfico;
+- até 50 colunas por experimento;
+- até 10.000 medidas por coluna;
+- rótulos visuais de A até AX;
+- curvas como associação explícita entre coluna X e coluna Y;
+- gráficos como agrupamentos ordenados de curvas;
+- `PerfilUsuario` como enum;
+- ausência de `TipoEixo`;
 - digitação manual;
-- colagem direta de planilhas;
-- CSV com ponto e vírgula;
-- aceitação de vírgula e ponto decimal;
-- notação científica consistente;
-- núcleo inicial com `Experimento`, `Coluna` e `DadoColuna`;
-- associação X–Y por `tipoEixo` e `idColunaX`;
-- adiamento da entidade `Curva`;
-- modularidade com baixa dependência entre partes;
-- detalhamento progressivo, sem obrigar cadastros completos.
+- colagem de planilhas;
+- importação CSV;
+- vírgula e ponto decimal;
+- notação científica;
+- detalhamento progressivo;
+- nenhuma tabela adicional nesta versão.
 
 ---
 
 ## 22. Autoridade das decisões
 
-As decisões arquitetônicas são conduzidas em conjunto por:
+As decisões arquitetônicas são conduzidas por:
 
 - Ronaldo Rodrigues Godoi, autor do projeto;
-- ChatGPT, no papel de apoio à arquitetura, modelagem e revisão;
-- Codex, no papel de agente de implementação dentro do ambiente de desenvolvimento.
+- ChatGPT, como apoio à arquitetura, modelagem e revisão;
+- Codex, como agente de implementação.
 
-O Codex deve implementar as decisões documentadas, não substituí-las por preferências próprias.
+O agente de implementação deve executar as decisões documentadas, não substituí-las por preferências próprias.
 
-Quando houver dúvida, deve preservar a solução mais simples e solicitar esclarecimento antes de ampliar o escopo.
+Quando houver dúvida, deve preservar o modelo oficial, evitar ampliar o escopo e relatar a questão antes de realizar mudança arquitetônica.
