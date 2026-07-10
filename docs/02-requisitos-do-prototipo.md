@@ -58,8 +58,7 @@ possível.
 
 -   aquisição automática de dados;
 -   múltiplos tipos avançados de caracterização;
--   controle de usuários;
--   gerenciamento de permissões;
+-   gerenciamento avançado de usuários e permissões;
 -   integração com equipamentos laboratoriais;
 -   geração completa de relatórios científicos.
 

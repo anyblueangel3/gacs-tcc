@@ -753,14 +753,18 @@ Não depender de uma única camada para consistência.
 
 ## 15. Estrutura inicial das classes `model`
 
-A primeira implementação deve criar somente:
+A primeira implementação deve criar:
 
 ```text
 src/main/java/br/uel/gacs/model/TipoEixo.java
+src/main/java/br/uel/gacs/model/PerfilUsuario.java
+src/main/java/br/uel/gacs/model/Usuario.java
 src/main/java/br/uel/gacs/model/Experimento.java
 src/main/java/br/uel/gacs/model/Coluna.java
 src/main/java/br/uel/gacs/model/DadoColuna.java
 ```
+
+`Usuario` e `PerfilUsuario` são tipos adicionais aprovados pela equipe para esta etapa.
 
 ### 15.1 `TipoEixo`
 
@@ -782,7 +786,33 @@ LocalDateTime dataExperimento;
 String observacoes;
 ```
 
-### 15.3 `Coluna`
+### 15.3 `PerfilUsuario`
+
+Valores:
+
+```java
+ADMINISTRADOR,
+PESQUISADOR,
+OPERADOR,
+CONSULTA
+```
+
+### 15.4 `Usuario`
+
+Atributos:
+
+```java
+Long idUsuario;
+String nome;
+String email;
+String senhaHash;
+PerfilUsuario perfil;
+Boolean ativo;
+LocalDateTime dataCriacao;
+LocalDateTime dataUltimaAlteracao;
+```
+
+### 15.5 `Coluna`
 
 Atributos:
 
@@ -794,7 +824,7 @@ TipoEixo tipoEixo;
 Long idColunaX;
 ```
 
-### 15.4 `DadoColuna`
+### 15.6 `DadoColuna`
 
 Atributos:
 
@@ -868,6 +898,8 @@ Crie, se ainda não existirem, a estrutura de pacotes definida para o projeto GA
 Implemente somente as classes do pacote br.uel.gacs.model:
 
 - TipoEixo
+- PerfilUsuario
+- Usuario
 - Experimento
 - Coluna
 - DadoColuna
