@@ -1,6 +1,8 @@
 br\uel\gacs\App.class
+br\uel\gacs\application\FluxoInicialAplicacao$2.class
 br\uel\gacs\dao\UsuarioDAO.class
 br\uel\gacs\model\Usuario.class
+br\uel\gacs\application\FluxoInicialAplicacao$1.class
 br\uel\gacs\model\Grafico.class
 br\uel\gacs\model\Coluna.class
 br\uel\gacs\application\SessaoUsuario.class
@@ -10,6 +12,7 @@ br\uel\gacs\model\Curva.class
 br\uel\gacs\model\DadoColuna.class
 br\uel\gacs\dao\CriadorBancoDados.class
 br\uel\gacs\controller\UsuarioCtlr.class
+br\uel\gacs\application\FluxoInicialAplicacao.class
 br\uel\gacs\model\CurvaGrafico.class
 br\uel\gacs\model\Experimento.class
 br\uel\gacs\util\SenhaUtil.class
