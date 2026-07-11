@@ -78,27 +78,6 @@ Usuários não deverão ser excluídos fisicamente do banco de dados.
 Após autenticação, a aplicação manterá o usuário autenticado através da
 classe `SessaoUsuario`.
 
-`SessaoUsuario`:
-
-- pertence ao pacote `application`;
-- não é entidade persistente e não corresponde a uma tabela;
-- mantém no máximo um `Usuario` autenticado durante a execução;
-- permite iniciar a sessão somente com usuário não nulo e ativo;
-- permite consultar se existe usuário autenticado;
-- fornece o usuário autenticado às camadas que necessitem verificar identidade e permissões;
-- permite encerrar a sessão, removendo a referência ao usuário autenticado.
-
-A senha e o hash da senha não deverão ser copiados para campos próprios da sessão. A sessão manterá apenas a referência ao objeto `Usuario` autenticado.
-
-A interface inicial da classe será composta pelas operações estáticas:
-
-```java
-iniciar(Usuario usuario)
-estaAutenticado()
-getUsuarioAutenticado()
-encerrar()
-```
-
 ------------------------------------------------------------------------
 
 # 6. Controle de permissões

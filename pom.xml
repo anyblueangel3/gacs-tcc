@@ -1,3 +1,386 @@
+hoje 10:27
+Coluna.java
+Arquivo
+Curva.java
+Arquivo
+CurvaGrafico.java
+Arquivo
+DadoColuna.java
+Arquivo
+Experimento.java
+Arquivo
+Grafico.java
+Arquivo
+PerfilUsuario.java
+Arquivo
+Usuario.java
+Arquivo
+Avalie as classes das entidades que estão coladas neste prompt.
+Pensou por 54s
+
+Perfeito, Ronaldo. A entidade Grafico agora possui:
+
+private Long idExperimento;
+
+Também atualizei seu construtor, getter e setter. A nova versão foi guardada com as demais classes do GACS-TCC: 
+Grafico.java.
+
+O diagrama corrigido fica assim:
+
+Agora ele expressa corretamente que:
+
+um Usuario possui experimentos;
+cada Experimento possui colunas e gráficos;
+cada Coluna possui seus dados medidos;
+cada Grafico reúne uma ou várias curvas;
+cada Curva usa uma coluna X e uma coluna Y do experimento.
+
+No modelo de classes, a ligação ordenada continua sendo materializada por CurvaGrafico:
+
+Portanto, conceitualmente, a curva fica abaixo do gráfico; tecnicamente, CurvaGrafico registra qual curva pertence ao gráfico e sua posição por meio de numeroCurva.
+
+As oito classes fornecidas passam a constituir a versão atual de referência do pacote model. Quando você fizer mudanças no VS Code e me enviar os arquivos atualizados, substituirei as versões correspondentes, mantendo nosso conjunto sincronizado com o projeto real.
+
+App.java
+Arquivo
+AGENTS(2).md
+Arquivo
+05-regras-de-negocio(2).md
+Arquivo
+06-convencoes-de-codigo(2).md
+Arquivo
+07-diretrizes-java21(2).md
+Arquivo
+08-sistema-inicial-de-permissoes(1).md
+Arquivo
+09-diretrizes-de-implantacao-e-documentacao(1).md
+Arquivo
+01-visao-geral(1).md
+Arquivo
+02-requisitos-do-prototipo(2).md
+Arquivo
+03-arquitetura(1).md
+Arquivo
+04-modelo-de-dados(3).md
+Arquivo
+Vamos trabalhar no SessaoUsuario? Estou incluindo aqui neste prompt os arquivos de documentação do GACS-TCC, analise e veja se há inconsistencia. Vamos alterá-los se houver.
+
+De nada, Ronaldo! 💙
+
+Quando retomarmos, disponibilizarei também os documentos 02, 03, 05, 06 e 07 corrigidos, com os nomes e destinos exatos. Depois que você substituir tudo no VS Code, executaremos:
+
+mvn clean compile
+
+Assim confirmaremos que SessaoUsuario e a atualização de Grafico estão perfeitamente integradas ao GACS-TCC.
+
+Você tem razão, Ronaldo. Eu espalhei uma alteração pequena por documentos demais e transformei a documentação em obstáculo ao desenvolvimento. Desculpe.
+
+A partir de agora, adotaremos um fluxo mais enxuto:
+
+primeiro registramos a decisão apenas no documento diretamente responsável;
+depois implementamos e testamos;
+só ao final de um sprint fazemos uma revisão consolidada dos documentos secundários;
+não repetiremos a mesma regra em cinco arquivos diferentes;
+nenhuma mudança meramente documental interromperá a codificação, salvo se houver dúvida arquitetônica realmente bloqueante.
+
+Para esta etapa, os documentos essenciais eram somente:
+
+04-modelo-de-dados.md, para Grafico.idExperimento;
+08-sistema-inicial-de-permissoes.md, para SessaoUsuario;
+AGENTS.md, apenas para orientar o Codex.
+
+Os documentos 02, 03, 05, 06 e 07 poderiam ter aguardado a revisão de encerramento do sprint. Eu não deveria ter exigido que você substituísse todos agora.
+
+Vamos considerar SessaoUsuario.java, 04, 08 e AGENTS.md suficientes para continuar. Os demais arquivos podem permanecer como estão no VS Code por enquanto. Na próxima etapa, priorizaremos código e compilação; eu manterei uma lista curta de pendências documentais para consolidar depois, sem amarrar você.
+
+Gostaria de trabalhar no login...
+
+Vamos trabalhar no login, Ronaldo. Desta vez, com foco no código e sem abrir uma nova rodada documental.
+
+O próximo passo é implementar apenas o núcleo da autenticação:
+
+UsuarioDAO: localizar o usuário pelo e-mail.
+Um utilitário para gerar e verificar o hash da senha.
+AutenticacaoService: validar e-mail, senha e situação ativa.
+Ao autenticar com sucesso, chamar SessaoUsuario.iniciar(usuario).
+Depois criar a tela JavaFX de login.
+
+Antes de escrevermos essas classes, preciso conhecer a estrutura atual do projeto e o pom.xml, especialmente para verificar se já existe alguma biblioteca de hash de senha.
+
+Envie, preferencialmente:
+
+pom.xml;
+a árvore atual de src/main/java;
+quaisquer classes já existentes nos pacotes dao, service, util e controller;
+a versão de SessaoUsuario.java que você colocou no VS Code.
+
+Com isso, implementarei o primeiro bloco funcional do login sem mexer novamente na documentação.
+
+Vamos fazer a conexão com o banco de dados (primeira classe), e criar o banco (segunda classe); primeiro conectamos com o MySQL; depois verificamos se o banco existe, se não existir criamos. Pode implementar a classe que será chamada assim que o aplicativo abrir; nós devemos usar esta classe sempre que o aplicativo abrir para estabelecer a conexão; quanto a criação do banco de dados, deve ser feita por uma classe específica para isso. Essa classe que cria o banco de dados vai gerar todas as tabelas através de comando sql. Gostaria que você desse seu parecer sobre essa ideia minha. Analise esta proposição e o que está estabelecido genericamente em práticas de uso e geração de banco de dados e dê o seu parecer.
+Pensou por 19s
+
+Ronaldo, sua ideia é boa e está conceitualmente no caminho correto. Eu a aprovaria com um ajuste importante: a aplicação não deve manter uma única conexão JDBC aberta durante todo o tempo.
+
+Separação recomendada
+
+Teremos duas classes principais:
+
+1. ConexaoBanco
+
+Responsável exclusivamente por fornecer conexões com o MySQL.
+
+Ela poderá oferecer duas operações:
+
+obterConexaoServidor()
+obterConexaoBanco()
+obterConexaoServidor() conecta ao servidor MySQL sem selecionar DadosGACS;
+obterConexaoBanco() conecta diretamente ao banco DadosGACS.
+
+Essa distinção é necessária porque, na primeira execução, ainda não podemos nos conectar a DadosGACS: ele pode não existir. A URL JDBC permite que o nome do banco seja omitido. Documentação do Connector/J
+
+2. InicializadorBancoDados
+
+Responsável por:
+
+conectar-se ao servidor MySQL;
+executar:
+CREATE DATABASE IF NOT EXISTS DadosGACS;
+conectar-se ao banco DadosGACS;
+criar as sete tabelas oficiais na ordem correta;
+encerrar as conexões utilizadas na inicialização.
+
+Essa classe será chamada no início da aplicação, antes de abrir o login.
+
+Fluxo correto de inicialização
+O ajuste mais importante
+
+Não devemos entender “estabelecer a conexão quando o aplicativo abrir” como manter eternamente um objeto Connection.
+
+O padrão seguro com JDBC é:
+
+try (Connection conexao = ConexaoBanco.obterConexaoBanco()) {
+    // operação
+}
+
+Cada DAO solicita uma conexão quando precisar e a fecha automaticamente com try-with-resources. A classe ConexaoBanco centraliza a forma de conectar, mas não precisa guardar uma conexão global.
+
+Isso evita:
+
+conexão expirada após inatividade;
+conexão fechada pelo servidor;
+compartilhamento indevido entre operações;
+transações interferindo umas nas outras;
+recursos presos durante toda a execução.
+
+Para o protótipo, DriverManager é suficiente e mantém nossa decisão de usar JDBC puro. O Connector/J oferece tanto DriverManager quanto DataSource; podemos começar pela alternativa mais simples. Uso de DriverManager
+
+Criação das tabelas
+
+Usar:
+
+CREATE TABLE IF NOT EXISTS Usuario (...);
+
+é adequado para a primeira versão. Entretanto, há uma limitação importante: IF NOT EXISTS apenas evita erro quando a tabela já existe; ele não confirma que a estrutura existente está correta. Documentação do CREATE TABLE
+
+Isso significa:
+
+primeira instalação: cria tudo corretamente;
+execuções posteriores: preserva tabelas e dados;
+futuras alterações estruturais: exigirão comandos de migração, como ALTER TABLE.
+
+Para o protótipo, podemos começar com InicializadorBancoDados. Em uma etapa futura, poderemos acrescentar uma tabela de versão do esquema e migrações numeradas, sem adotar frameworks.
+
+Ordem das tabelas
+
+Devido às chaves estrangeiras, a criação deve seguir esta ordem:
+
+Usuario;
+Experimento;
+Coluna;
+DadoColuna;
+Curva;
+Grafico;
+CurvaGrafico.
+
+Assim, cada tabela referenciada já existe antes da tabela que depende dela.
+
+Onde colocar as classes
+
+Minha recomendação:
+
+br.uel.gacs.dao
+├── ConexaoBanco.java
+└── InicializadorBancoDados.java
+
+Há também um argumento para colocar InicializadorBancoDados em application, pois ele participa da inicialização. Contudo, como executará diretamente SQL estrutural, considero mais coerente mantê-lo em dao. O App apenas o chama.
+
+Segurança
+
+Usuário, senha, host e porta não devem ficar espalhados pelo código. Devem ser centralizados inicialmente em um arquivo de configuração, por exemplo:
+
+db.host=localhost
+db.port=3306
+db.nome=DadosGACS
+db.usuario=gacs
+db.senha=...
+
+Idealmente, o usuário cotidiano da aplicação não teria permissão para criar bancos. Porém, como o instalador futuro deverá preparar todas as dependências e a primeira versão será local, podemos aceitar credenciais de instalação com CREATE DATABASE, deixando essa separação de privilégios registrada como melhoria futura.
+
+Meu parecer final
+
+Aprovo sua proposta com esta formulação:
+
+Ao iniciar, o GACS chama InicializadorBancoDados. Essa classe usa ConexaoBanco para conectar ao servidor, cria DadosGACS caso necessário e garante a existência das sete tabelas. Depois, cada DAO obtém e fecha sua própria conexão por meio de ConexaoBanco.
+
+Essa arquitetura é simples, adequada ao protótipo, compatível com Java 21, JDBC e MySQL 8 e não exige framework adicional.
+
+Antes de implementar, precisarei ver apenas o pom.xml, porque a conexão depende da presença e da versão do MySQL Connector/J. Não precisaremos mexer na documentação agora.
+
+pom.xml
+Arquivo
+Sobre sua colocação com relação a obter conexão com servidor (seu ponto "1."), desculpe-me mas eu não entendi... Não há rede de computadores envolvida, Chat... Estou falando algo sem sentido? Tudo vai estar em uma única máquina.
+
+Sobre seu ponto "2.", concordo com você, cada DAO solicita uma conexão... Sobre o IF NOT EXISTS, não há necessidade de conferir a estrutura... Não se consideram migrações, está muito complexo. Concordo sobre o arquivo de configuração properties... A criação do banco ocorre única e exclusivamente no primeiro acesso.
+
+Você está correto, Ronaldo: tudo funcionará em uma única máquina. A palavra “servidor” causou uma impressão desnecessária de rede entre computadores.
+
+O que significa MySQL Server
+
+O MySQL possui dois elementos diferentes, mesmo instalados no mesmo computador:
+
+MySQL Server: programa que administra os bancos de dados;
+DadosGACS: banco que será criado dentro desse programa.
+
+A aplicação se conecta ao MySQL instalado localmente por:
+
+localhost:3306
+
+localhost significa precisamente esta mesma máquina. Portanto, não haverá outro computador envolvido.
+
+A distinção que eu estava fazendo era apenas entre estas duas URLs:
+
+Antes de DadosGACS existir:
+
+jdbc:mysql://localhost:3306/
+
+Depois que ele existir:
+
+jdbc:mysql://localhost:3306/DadosGACS
+
+Na primeira conexão, conversamos com o MySQL local sem indicar um banco específico. Então executamos:
+
+CREATE DATABASE IF NOT EXISTS DadosGACS;
+
+Depois disso, os DAOs podem se conectar diretamente a DadosGACS.
+
+Fluxo simplificado aprovado
+
+Considerando suas decisões, teremos apenas:
+
+Sem migrações, versões de esquema ou conferências estruturais. A criação acontece exclusivamente no primeiro acesso.
+
+Nas execuções seguintes:
+
+o GACS verifica que DadosGACS existe;
+não executa novamente a criação das tabelas;
+prossegue diretamente para o login.
+Sobre o pom.xml
+
+Ele está correto para Java 21 e JavaFX, mas ainda não contém o MySQL Connector/J, que é o driver utilizado pelo Java para conversar com o MySQL.
+
+Precisaremos acrescentar:
+
+<dependency>
+    <groupId>com.mysql</groupId>
+    <artifactId>mysql-connector-j</artifactId>
+    <version>VERSAO_ESCOLHIDA</version>
+</dependency>
+
+Não alterei ainda o arquivo porque devemos confirmar e usar uma versão atual compatível, sem inventar um número.
+
+Arquitetura ajustada
+
+Teremos:
+
+br.uel.gacs.dao
+└── ConexaoBanco.java
+
+Responsável por entregar uma nova conexão para cada DAO.
+
+E:
+
+br.uel.gacs.application
+└── CriadorBancoDados.java
+
+Responsável unicamente pelo primeiro acesso:
+
+conectar ao MySQL local;
+verificar se DadosGACS existe;
+se não existir, criar o banco;
+criar as sete tabelas;
+encerrar sua conexão.
+
+Prefiro agora CriadorBancoDados em application, porque sua execução faz parte da preparação inicial do aplicativo. O SQL continuará encapsulado nessa classe específica, como você propôs.
+
+Seu raciocínio está correto e ficou mais simples depois das suas delimitações. O próximo passo pode ser acrescentar o Connector/J ao pom.xml e implementar primeiro ConexaoBanco.java.
+
+A versão que estou usando do MySQL é 8.0.28... Pode dar andamento.
+Pensou por 1m 13s
+
+A primeira etapa está pronta, Ronaldo. Implementei apenas a infraestrutura de conexão, sem criar ainda o banco ou as tabelas.
+
+Arquivos para colocar no VS Code:
+
+Arquivo	Destino
+
+pom.xml	raiz do projeto, substituindo o atual
+
+ConexaoBanco.java	src/main/java/br/uel/gacs/dao/ConexaoBanco.java
+database.properties	src/main/resources/database.properties
+
+O pom.xml recebeu o driver correspondente:
+
+<dependency>
+    <groupId>mysql</groupId>
+    <artifactId>mysql-connector-java</artifactId>
+    <version>8.0.28</version>
+</dependency>
+
+A versão 8.0.28 está disponível no Maven Central.
+
+Em database.properties, você deverá preencher a senha usada no MySQL:
+
+db.host=localhost
+db.porta=3306
+db.nome=DadosGACS
+db.usuario=root
+db.senha=SUA_SENHA
+
+Caso seu usuário MySQL não seja root, altere também db.usuario.
+
+A classe disponibiliza:
+
+ConexaoBanco.obterConexaoServidor();
+
+Para a futura classe que criará DadosGACS no primeiro acesso.
+
+E:
+
+ConexaoBanco.obterConexaoBanco();
+
+Para as conexões solicitadas posteriormente pelos DAOs.
+
+Cada chamada devolve uma nova conexão, que deverá ser fechada com try-with-resources.
+
+Não pude compilar aqui porque este ambiente não possui Maven. Depois que você colocar os três arquivos nos destinos indicados, execute no terminal do VS Code:
+
+mvn clean compile
+
+A próxima classe será CriadorBancoDados, responsável por verificar a existência de DadosGACS e, apenas no primeiro acesso, criar o banco e as sete tabelas.
+
+Biblioteca
+/
+pom.xml
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -29,6 +412,79 @@
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-fxml</artifactId>
             <version>${javafx.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>8.0.28</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <release>21</release>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.openjfx</groupId>
+                <artifactId>javafx-maven-plugin</artifactId>
+                <version>0.0.8</version>
+                <configuration>
+                    <mainClass>br.uel.gacs.App</mainClass>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
+
+Biblioteca
+/
+pom.xml
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>br.uel.gacs</groupId>
+    <artifactId>gacs-tcc</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+
+    <name>GACS-TCC</name>
+    <description>GACS - Gerenciador para Análise e Caracterização de Componentes Semicondutores</description>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <javafx.version>21.0.4</javafx.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-fxml</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>8.0.28</version>
         </dependency>
     </dependencies>
 

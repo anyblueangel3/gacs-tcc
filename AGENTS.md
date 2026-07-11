@@ -158,6 +158,9 @@ Responsável por:
 - configuração principal;
 - ponto de entrada JavaFX;
 - composição inicial das dependências.
+- manutenção da sessão do usuário autenticado por meio de `SessaoUsuario`.
+
+`SessaoUsuario` não é entidade persistente, não pertence ao pacote `model` e não cria tabela no banco de dados.
 
 ### 5.2 `controller`
 
@@ -420,12 +423,17 @@ Atributos:
 
 ```java
 Long id;
+Long idExperimento;
 String nome;
 ```
+
+Cada gráfico pertence obrigatoriamente a um único experimento.
 
 Um gráfico pode conter várias curvas.
 
 Uma curva pode participar de vários gráficos.
+
+Um gráfico somente pode conter curvas formadas por colunas do mesmo experimento ao qual ele pertence.
 
 ### 7.7 `CurvaGrafico`
 
@@ -453,6 +461,8 @@ Regras:
 
 ```text
 Experimento 1:N Coluna
+
+Experimento 1:N Grafico
 
 Usuario 1:N Experimento
 
@@ -839,7 +849,9 @@ docs/
 ├── 04-modelo-de-dados.md
 ├── 05-regras-de-negocio.md
 ├── 06-convencoes-de-codigo.md
-└── 07-diretrizes-java21.md
+├── 07-diretrizes-java21.md
+├── 08-sistema-inicial-de-permissoes.md
+└── 09-diretrizes-de-implantacao-e-documentacao.md
 ```
 
 Ordem de autoridade para implementação:
@@ -875,6 +887,8 @@ Decisões vigentes:
 - rótulos visuais de A até AX;
 - curvas como associação explícita entre coluna X e coluna Y;
 - gráficos como agrupamentos ordenados de curvas;
+- cada gráfico vinculado obrigatoriamente a um experimento;
+- `SessaoUsuario` como componente não persistente do pacote `application`;
 - `PerfilUsuario` como enum;
 - ausência de `TipoEixo`;
 - digitação manual;

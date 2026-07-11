@@ -226,16 +226,11 @@ Representa uma composição gráfica salva pelo usuário.
 | Campo | Tipo lógico | Observação |
 |---|---|---|
 | `id` | `Long` | Identificador único do gráfico |
-| `idExperimento` | `Long` | Chave estrangeira para `Experimento` |
 | `nome` | `String` | Nome do gráfico |
-
-Todo gráfico pertence obrigatoriamente a um único experimento.
 
 Um gráfico poderá conter uma ou várias curvas.
 
 Uma mesma curva poderá ser utilizada em gráficos diferentes.
-
-Todas as curvas adicionadas ao gráfico devem ser formadas por colunas do mesmo experimento ao qual o gráfico pertence.
 
 ---
 
@@ -289,8 +284,6 @@ Usuario 1:N Experimento
 
 Experimento 1:N Coluna
 
-Experimento 1:N Grafico
-
 Coluna 1:N DadoColuna
 
 Coluna 1:N Curva, no papel de eixo X
@@ -313,19 +306,18 @@ Usuario
             +-- idUsuario -> Usuario
             |
             +-- Coluna
-            |      |
-            |      +-- DadoColuna
-            |
-            +-- Grafico
                    |
-                   +-- CurvaGrafico
-                            |
-                            +-- Curva
+                   +-- DadoColuna
 
 Curva
     +-- idColunaX -> Coluna
     +-- idColunaY -> Coluna
 
+Grafico
+    |
+    +-- CurvaGrafico
+             |
+             +-- Curva
 ```
 
 ---
@@ -344,8 +336,6 @@ Curva
 10. Uma curva pode pertencer a vários gráficos.
 11. Uma mesma curva não pode aparecer duas vezes no mesmo gráfico.
 12. `numeroCurva` deve ser único e sequencial dentro de cada gráfico.
-13. Todo gráfico deve pertencer a um experimento existente.
-14. Toda curva adicionada a um gráfico deve pertencer ao mesmo experimento do gráfico.
 
 ---
 
