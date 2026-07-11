@@ -100,14 +100,19 @@ public final class CriadorBancoDados {
 
     private CriadorBancoDados() { }
 
-    /** Cria o banco e as tabelas somente quando DadosGACS ainda não existe. */
-    public static void criarSeNaoExistir() throws SQLException {
+    /**
+     * Cria o banco e as tabelas somente quando DadosGACS ainda não existe.
+     *
+     * @return true quando o banco foi criado nesta execução; false quando já existia
+     */
+    public static boolean criarSeNaoExistir() throws SQLException {
         if (bancoExiste()) {
-            return;
+            return false;
         }
 
         criarBanco();
         criarTabelas();
+        return true;
     }
 
     private static boolean bancoExiste() throws SQLException {

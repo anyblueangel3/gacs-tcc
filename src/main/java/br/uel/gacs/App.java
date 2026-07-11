@@ -1,21 +1,15 @@
 package br.uel.gacs;
 
+import br.uel.gacs.application.FluxoInicialAplicacao;
+
 import javafx.application.Application;
-import javafx.scene.Scene;
-import javafx.scene.control.Label;
 import javafx.stage.Stage;
 
 public class App extends Application {
 
     @Override
     public void start(Stage palcoPrincipal) {
-        Label mensagem = new Label("GACS - Gerenciador para Análise e Caracterização de Componentes Semicondutores");
-
-        Scene cena = new Scene(mensagem, 800, 400);
-
-        palcoPrincipal.setTitle("GACS");
-        palcoPrincipal.setScene(cena);
-        palcoPrincipal.show();
+        new FluxoInicialAplicacao(palcoPrincipal).iniciar();
     }
 
     public static void main(String[] args) {

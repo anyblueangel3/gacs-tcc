@@ -1,4 +1,10 @@
 C:\Users\Usuario\RonaldoGodoi-fim\UEL - TCC\gacs-tcc\src\main\java\br\uel\gacs\App.java
+C:\Users\Usuario\RonaldoGodoi-fim\UEL - TCC\gacs-tcc\src\main\java\br\uel\gacs\application\SessaoUsuario.java
+C:\Users\Usuario\RonaldoGodoi-fim\UEL - TCC\gacs-tcc\src\main\java\br\uel\gacs\controller\LoginCtlr.java
+C:\Users\Usuario\RonaldoGodoi-fim\UEL - TCC\gacs-tcc\src\main\java\br\uel\gacs\controller\UsuarioCtlr.java
+C:\Users\Usuario\RonaldoGodoi-fim\UEL - TCC\gacs-tcc\src\main\java\br\uel\gacs\dao\ConexaoBanco.java
+C:\Users\Usuario\RonaldoGodoi-fim\UEL - TCC\gacs-tcc\src\main\java\br\uel\gacs\dao\CriadorBancoDados.java
+C:\Users\Usuario\RonaldoGodoi-fim\UEL - TCC\gacs-tcc\src\main\java\br\uel\gacs\dao\UsuarioDAO.java
 C:\Users\Usuario\RonaldoGodoi-fim\UEL - TCC\gacs-tcc\src\main\java\br\uel\gacs\model\Coluna.java
 C:\Users\Usuario\RonaldoGodoi-fim\UEL - TCC\gacs-tcc\src\main\java\br\uel\gacs\model\Curva.java
 C:\Users\Usuario\RonaldoGodoi-fim\UEL - TCC\gacs-tcc\src\main\java\br\uel\gacs\model\CurvaGrafico.java
@@ -7,3 +13,4 @@ C:\Users\Usuario\RonaldoGodoi-fim\UEL - TCC\gacs-tcc\src\main\java\br\uel\gacs\m
 C:\Users\Usuario\RonaldoGodoi-fim\UEL - TCC\gacs-tcc\src\main\java\br\uel\gacs\model\Grafico.java
 C:\Users\Usuario\RonaldoGodoi-fim\UEL - TCC\gacs-tcc\src\main\java\br\uel\gacs\model\PerfilUsuario.java
 C:\Users\Usuario\RonaldoGodoi-fim\UEL - TCC\gacs-tcc\src\main\java\br\uel\gacs\model\Usuario.java
+C:\Users\Usuario\RonaldoGodoi-fim\UEL - TCC\gacs-tcc\src\main\java\br\uel\gacs\util\SenhaUtil.java
