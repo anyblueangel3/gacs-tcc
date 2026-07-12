@@ -200,7 +200,10 @@ public final class FluxoInicialAplicacao {
             loginCtlr.sair();
             exibirTelaLogin();
         });
-        configurarPalco("GACS", telaPrincipal.criar(), 1000, 650);
+        configurarPalco("GACS", telaPrincipal.criar(), 1280, 800);
+        palcoPrincipal.setMinWidth(1050);
+        palcoPrincipal.setMinHeight(700);
+        palcoPrincipal.setResizable(true);
     }
 
     private void configurarPalco(String titulo, javafx.scene.Parent conteudo,

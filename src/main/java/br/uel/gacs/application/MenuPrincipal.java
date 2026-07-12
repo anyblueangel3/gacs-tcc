@@ -17,14 +17,28 @@ public final class MenuPrincipal {
     private final Window janela;
     private final Runnable acaoSair;
     private final Runnable acaoCadastroUsuarios;
+    private final Runnable acaoNovoExperimento;
+    private final Runnable acaoCarregarExperimento;
+    private final Runnable acaoColarPlanilha;
+    private final Runnable acaoDigitarDados;
+    private Button botaoNovoGrafico;
+    private MenuItem itemNovoGrafico;
 
-    public MenuPrincipal(Window janela, Runnable acaoSair, Runnable acaoCadastroUsuarios) {
-        if (janela == null || acaoSair == null || acaoCadastroUsuarios == null) {
+    public MenuPrincipal(Window janela, Runnable acaoSair, Runnable acaoCadastroUsuarios,
+                         Runnable acaoNovoExperimento, Runnable acaoCarregarExperimento,
+                         Runnable acaoColarPlanilha, Runnable acaoDigitarDados) {
+        if (janela == null || acaoSair == null || acaoCadastroUsuarios == null
+                || acaoNovoExperimento == null || acaoCarregarExperimento == null
+                || acaoColarPlanilha == null || acaoDigitarDados == null) {
             throw new IllegalArgumentException("A janela e as ações devem ser informadas.");
         }
         this.janela = janela;
         this.acaoSair = acaoSair;
         this.acaoCadastroUsuarios = acaoCadastroUsuarios;
+        this.acaoNovoExperimento = acaoNovoExperimento;
+        this.acaoCarregarExperimento = acaoCarregarExperimento;
+        this.acaoColarPlanilha = acaoColarPlanilha;
+        this.acaoDigitarDados = acaoDigitarDados;
     }
 
     /** Cria a região superior composta pela barra de menus e pelos atalhos. */
@@ -35,9 +49,9 @@ public final class MenuPrincipal {
     private MenuBar criarBarraMenus() {
         Menu menuArquivo = new Menu("Arquivo");
         menuArquivo.getItems().addAll(
-                criarItemProvisorio("Novo Experimento"),
-                criarItemProvisorio("Carregar Experimento"),
-                criarItemProvisorio("Novo Gráfico"),
+                criarItem("Novo Experimento", acaoNovoExperimento),
+                criarItem("Carregar Experimento", acaoCarregarExperimento),
+                itemNovoGrafico = criarItemProvisorio("Novo Gráfico"),
                 new SeparatorMenuItem(),
                 criarItem("Sair", acaoSair));
 
@@ -56,18 +70,29 @@ public final class MenuPrincipal {
     private HBox criarFaixaAtalhos() {
         Button novoExperimento = criarBotaoAtalho("Novo\nExperimento");
         Button carregarExperimento = criarBotaoAtalho("Carregar\nExperimento");
-        Button novoGrafico = criarBotaoAtalho("Novo\nGráfico");
+        botaoNovoGrafico = criarBotaoAtalho("Novo\nGráfico");
+        Button colarPlanilha = criarBotaoAtalho("Colar de\nPlanilha");
+        Button digitarDados = criarBotaoAtalho("Digitar\nDados");
 
-        novoExperimento.setOnAction(evento -> informarFuncionalidadeFutura("Novo Experimento"));
-        carregarExperimento.setOnAction(evento -> informarFuncionalidadeFutura("Carregar Experimento"));
-        novoGrafico.setOnAction(evento -> informarFuncionalidadeFutura("Novo Gráfico"));
+        novoExperimento.setOnAction(evento -> acaoNovoExperimento.run());
+        carregarExperimento.setOnAction(evento -> acaoCarregarExperimento.run());
+        botaoNovoGrafico.setOnAction(evento -> informarFuncionalidadeFutura("Novo Gráfico"));
+        colarPlanilha.setOnAction(evento -> acaoColarPlanilha.run());
+        digitarDados.setOnAction(evento -> acaoDigitarDados.run());
+        definirExperimentoAberto(false);
 
-        HBox faixa = new HBox(12, novoExperimento, carregarExperimento, novoGrafico);
+        HBox faixa = new HBox(12, novoExperimento, carregarExperimento, botaoNovoGrafico,
+                colarPlanilha, digitarDados);
         faixa.setAlignment(Pos.CENTER_LEFT);
         faixa.setPadding(new Insets(14, 18, 14, 18));
         faixa.setStyle("-fx-background-color: #eaf1f8; -fx-border-color: #c5d3e0; "
                 + "-fx-border-width: 0 0 1 0;");
         return faixa;
+    }
+
+    public void definirExperimentoAberto(boolean aberto) {
+        if (botaoNovoGrafico != null) botaoNovoGrafico.setDisable(!aberto);
+        if (itemNovoGrafico != null) itemNovoGrafico.setDisable(!aberto);
     }
 
     private Button criarBotaoAtalho(String texto) {
