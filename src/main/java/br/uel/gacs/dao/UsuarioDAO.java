@@ -185,6 +185,22 @@ public class UsuarioDAO {
         }
     }
 
+    /** Conta os administradores ativos existentes. */
+    public int contarAdministradoresAtivos() throws SQLException {
+        String sql = """
+                SELECT COUNT(*)
+                FROM Usuario
+                WHERE perfil = 'ADMINISTRADOR' AND ativo = TRUE
+                """;
+
+        try (Connection conexao = ConexaoBanco.obterConexaoBanco();
+             PreparedStatement comando = conexao.prepareStatement(sql);
+             ResultSet resultado = comando.executeQuery()) {
+            resultado.next();
+            return resultado.getInt(1);
+        }
+    }
+
     private Usuario converterUsuario(ResultSet resultado) throws SQLException {
         return new Usuario(
                 resultado.getLong("id"),

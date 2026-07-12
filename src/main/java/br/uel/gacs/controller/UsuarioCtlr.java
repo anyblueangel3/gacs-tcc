@@ -1,5 +1,7 @@
 package br.uel.gacs.controller;
 
+import br.uel.gacs.application.Autorizador;
+import br.uel.gacs.application.SessaoUsuario;
 import br.uel.gacs.dao.UsuarioDAO;
 import br.uel.gacs.model.PerfilUsuario;
 import br.uel.gacs.model.Usuario;
@@ -37,11 +39,15 @@ public class UsuarioCtlr {
         String emailNormalizado = normalizarEmail(email);
         validarSenha(senha);
 
+        boolean primeiroUsuario = !usuarioDAO.possuiUsuarios();
+        if (!primeiroUsuario) {
+            Autorizador.exigirAdministrador();
+        }
+
         if (usuarioDAO.existeEmail(emailNormalizado)) {
             throw new IllegalArgumentException("Já existe um usuário com este e-mail.");
         }
 
-        boolean primeiroUsuario = !usuarioDAO.possuiUsuarios();
         PerfilUsuario perfilDefinido = primeiroUsuario
                 ? PerfilUsuario.ADMINISTRADOR
                 : exigirPerfil(perfil);
@@ -62,22 +68,40 @@ public class UsuarioCtlr {
     }
 
     public Optional<Usuario> buscarPorId(Long id) throws SQLException {
+        Autorizador.exigirAdministrador();
         validarId(id);
         return usuarioDAO.buscarPorId(id);
     }
 
     public Optional<Usuario> buscarPorEmail(String email) throws SQLException {
+        Autorizador.exigirAdministrador();
         return usuarioDAO.buscarPorEmail(normalizarEmail(email));
     }
 
     public List<Usuario> listarTodos() throws SQLException {
+        Autorizador.exigirAdministrador();
         return usuarioDAO.listarTodos();
     }
 
     /** Atualiza os dados do usuário e conserva a senha atual. */
     public boolean atualizar(Usuario usuario) throws SQLException {
+        Autorizador.exigirAdministrador();
         validarUsuarioParaAtualizacao(usuario);
         normalizarUsuario(usuario);
+
+        Optional<Usuario> usuarioAtual = usuarioDAO.buscarPorId(usuario.getId());
+        if (usuarioAtual.isEmpty()) {
+            return false;
+        }
+
+        Long idUsuarioLogado = SessaoUsuario.exigirUsuarioLogado().getId();
+        if (usuario.getId().equals(idUsuarioLogado)
+                && usuario.getPerfil() != usuarioAtual.get().getPerfil()) {
+            throw new IllegalArgumentException(
+                    "O usuário conectado não pode alterar o próprio perfil.");
+        }
+
+        impedirRemocaoDoUltimoAdministrador(usuarioAtual.get(), usuario);
 
         Optional<Usuario> usuarioComMesmoEmail = usuarioDAO.buscarPorEmail(usuario.getEmail());
         if (usuarioComMesmoEmail.isPresent()
@@ -91,6 +115,7 @@ public class UsuarioCtlr {
 
     /** Substitui a senha pelo hash da nova senha informada. */
     public boolean alterarSenha(Long id, String novaSenha) throws SQLException {
+        Autorizador.exigirAdministrador();
         validarId(id);
         validarSenha(novaSenha);
 
@@ -106,16 +131,53 @@ public class UsuarioCtlr {
     }
 
     public boolean alterarStatus(Long id, boolean ativo) throws SQLException {
+        Autorizador.exigirAdministrador();
         validarId(id);
+        Usuario usuario = usuarioDAO.buscarPorId(id).orElse(null);
+        if (usuario == null) {
+            return false;
+        }
+
+        if (!ativo) {
+            Long idUsuarioLogado = SessaoUsuario.exigirUsuarioLogado().getId();
+            if (id.equals(idUsuarioLogado)) {
+                throw new IllegalArgumentException("O usuário conectado não pode inativar a própria conta.");
+            }
+            impedirRemocaoDoUltimoAdministrador(
+                    usuario,
+                    copiarComSituacao(usuario, false));
+        }
         return usuarioDAO.alterarStatus(id, ativo);
     }
 
     public boolean existeEmail(String email) throws SQLException {
+        Autorizador.exigirAdministrador();
         return usuarioDAO.existeEmail(normalizarEmail(email));
     }
 
     public boolean possuiUsuarios() throws SQLException {
         return usuarioDAO.possuiUsuarios();
+    }
+
+    private void impedirRemocaoDoUltimoAdministrador(Usuario atual, Usuario alterado)
+            throws SQLException {
+        boolean eraAdministradorAtivo = atual.getPerfil() == PerfilUsuario.ADMINISTRADOR
+                && Boolean.TRUE.equals(atual.getAtivo());
+        boolean continuaraAdministradorAtivo = alterado.getPerfil() == PerfilUsuario.ADMINISTRADOR
+                && Boolean.TRUE.equals(alterado.getAtivo());
+
+        if (eraAdministradorAtivo && !continuaraAdministradorAtivo
+                && usuarioDAO.contarAdministradoresAtivos() <= 1) {
+            throw new IllegalArgumentException(
+                    "O sistema deve manter pelo menos um administrador ativo.");
+        }
+    }
+
+    private Usuario copiarComSituacao(Usuario usuario, boolean ativo) {
+        return new Usuario(
+                usuario.getId(), usuario.getNome(), usuario.getEmail(), usuario.getSenhaHash(),
+                usuario.getPerfil(), ativo, usuario.getDataCriacao(),
+                usuario.getDataUltimaAlteracao());
     }
 
     private void validarUsuarioParaAtualizacao(Usuario usuario) {

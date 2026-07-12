@@ -196,23 +196,11 @@ public final class FluxoInicialAplicacao {
     }
 
     private void exibirTelaPrincipal() {
-        Usuario usuario = SessaoUsuario.exigirUsuarioLogado();
-
-        Label titulo = new Label("GACS - Tela principal provisória");
-        titulo.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
-        Label saudacao = new Label("Usuário conectado: " + usuario.getNome());
-
-        Button botaoSair = new Button("Sair");
-        botaoSair.setOnAction(evento -> {
+        TelaPrincipal telaPrincipal = new TelaPrincipal(palcoPrincipal, () -> {
             loginCtlr.sair();
             exibirTelaLogin();
         });
-
-        VBox conteudo = new VBox(18, titulo, saudacao, botaoSair);
-        conteudo.setAlignment(Pos.CENTER);
-        conteudo.setPadding(new Insets(25));
-
-        configurarPalco("GACS", conteudo, 800, 450);
+        configurarPalco("GACS", telaPrincipal.criar(), 1000, 650);
     }
 
     private void configurarPalco(String titulo, javafx.scene.Parent conteudo,

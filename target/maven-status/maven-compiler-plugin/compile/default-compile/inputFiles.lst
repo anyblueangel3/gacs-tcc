@@ -1,6 +1,10 @@
 C:\Users\Usuario\RonaldoGodoi-fim\UEL - TCC\gacs-tcc\src\main\java\br\uel\gacs\App.java
+C:\Users\Usuario\RonaldoGodoi-fim\UEL - TCC\gacs-tcc\src\main\java\br\uel\gacs\application\Autorizador.java
 C:\Users\Usuario\RonaldoGodoi-fim\UEL - TCC\gacs-tcc\src\main\java\br\uel\gacs\application\FluxoInicialAplicacao.java
+C:\Users\Usuario\RonaldoGodoi-fim\UEL - TCC\gacs-tcc\src\main\java\br\uel\gacs\application\MenuPrincipal.java
 C:\Users\Usuario\RonaldoGodoi-fim\UEL - TCC\gacs-tcc\src\main\java\br\uel\gacs\application\SessaoUsuario.java
+C:\Users\Usuario\RonaldoGodoi-fim\UEL - TCC\gacs-tcc\src\main\java\br\uel\gacs\application\TelaCadastroUsuarios.java
+C:\Users\Usuario\RonaldoGodoi-fim\UEL - TCC\gacs-tcc\src\main\java\br\uel\gacs\application\TelaPrincipal.java
 C:\Users\Usuario\RonaldoGodoi-fim\UEL - TCC\gacs-tcc\src\main\java\br\uel\gacs\controller\LoginCtlr.java
 C:\Users\Usuario\RonaldoGodoi-fim\UEL - TCC\gacs-tcc\src\main\java\br\uel\gacs\controller\UsuarioCtlr.java
 C:\Users\Usuario\RonaldoGodoi-fim\UEL - TCC\gacs-tcc\src\main\java\br\uel\gacs\dao\ConexaoBanco.java
