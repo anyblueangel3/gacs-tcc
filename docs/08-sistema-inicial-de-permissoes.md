@@ -109,8 +109,12 @@ pela autorização.
 Sempre que possível, operações não permitidas deverão permanecer ocultas
 ou desabilitadas na interface.
 
-As regras de autorização também deverão ser verificadas na camada de
-serviço.
+As regras de autorização também deverão ser verificadas pelos controllers que
+coordenam as operações. A interface poderá ocultar ou desabilitar ações, mas
+essa proteção visual não substituirá a validação realizada pelo controller.
+
+Não será criada uma camada `service` apenas para executar verificações de
+permissão nesta fase do protótipo.
 
 ------------------------------------------------------------------------
 

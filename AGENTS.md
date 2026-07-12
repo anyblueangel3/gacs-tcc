@@ -146,7 +146,6 @@ br.uel.gacs
 ├── controller
 ├── dao
 ├── model
-├── service
 └── util
 ```
 
@@ -166,9 +165,11 @@ Responsável por:
 
 Responsável por:
 
-- integração entre telas JavaFX e serviços;
+- integração com as telas JavaFX;
 - eventos de interface;
-- validações de interface;
+- validações e regras do processo;
+- coordenação de um ou mais DAOs;
+- controle de operações transacionais compostas;
 - atualização de tabelas, campos e gráficos.
 
 Controllers não devem conter SQL.
@@ -195,16 +196,17 @@ Responsável por:
 
 Classes de `model` não devem executar SQL nem manipular componentes JavaFX.
 
-### 5.5 `service`
+### 5.5 Ausência de `service` na fase atual
 
-Responsável por:
+Não criar pacote ou classes `service` apenas para completar uma estrutura em
+camadas. Nesta fase do protótipo, os controllers aplicam as regras do processo,
+coordenam os DAOs e controlam operações transacionais compostas.
 
-- regras de negócio;
-- coordenação entre DAOs;
-- validações entre entidades;
-- operações transacionais;
-- preparação de curvas e gráficos;
-- importação, normalização e tratamento de dados.
+Um controller poderá utilizar vários DAOs quando o caso de uso exigir. Não é
+obrigatório criar um controller para cada DAO envolvido em uma operação.
+
+Uma camada `service` somente poderá ser introduzida futuramente diante de uma
+necessidade concreta, mediante nova decisão arquitetônica documentada.
 
 ### 5.6 `util`
 
@@ -348,9 +350,12 @@ Regras principais:
 - cada experimento aceita no máximo 50 colunas;
 - `rotulo` representa a posição visual A, B, C, ..., AX;
 - o valor numérico de `rotulo` será convertido pela aplicação;
-- o rótulo somente existe quando a coluna possui dados;
+- o rótulo é atribuído automaticamente conforme a posição da coluna e não é
+  digitado, colado ou importado;
 - depois de atribuído, o rótulo permanece associado à coluna;
 - o rótulo deve ser único dentro do experimento.
+- `nomeColuna` é independente do rótulo e pode ser digitado, colado, importado
+  ou permanecer vazio.
 
 Conversão prevista:
 
@@ -733,7 +738,7 @@ A representação por IDs mantém proximidade com JDBC e com o modelo relacional
 Aplicar defesa em camadas:
 
 - interface;
-- service;
+- controller;
 - banco de dados.
 
 ### 16.1 Validações simples da entidade
@@ -745,7 +750,7 @@ Exemplos:
 - `idColunaX` diferente de `idColunaY`;
 - `numeroCurva` maior ou igual a 1.
 
-### 16.2 Validações do serviço
+### 16.2 Validações do processo no controller
 
 Exemplos:
 

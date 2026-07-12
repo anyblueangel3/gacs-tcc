@@ -15,11 +15,14 @@ br\uel\gacs\dao\CurvaGraficoDAO.class
 br\uel\gacs\application\FluxoInicialAplicacao.class
 br\uel\gacs\controller\ExperimentoCtlr$ExperimentoListado.class
 br\uel\gacs\model\Experimento.class
+br\uel\gacs\util\FormatadorNumero.class
 br\uel\gacs\util\SenhaUtil.class
 br\uel\gacs\dao\CurvaDAO$Op.class
 br\uel\gacs\model\PerfilUsuario.class
+br\uel\gacs\application\PlanilhaExperimento.class
 br\uel\gacs\dao\CurvaDAO.class
 br\uel\gacs\App.class
+br\uel\gacs\application\PainelExperimento$CelulaNumerica.class
 br\uel\gacs\dao\GraficoDAO.class
 br\uel\gacs\dao\UsuarioDAO.class
 br\uel\gacs\model\Usuario.class

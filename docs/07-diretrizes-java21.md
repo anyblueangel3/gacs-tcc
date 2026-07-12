@@ -149,19 +149,23 @@ Não utilizar recursos preview.
 # Arquitetura
 
 Controller:
-- interface.
-
-Service:
-- regras de negócio.
+- integração com a interface;
+- validações e regras do processo;
+- coordenação de um ou mais DAOs;
+- controle de operações transacionais compostas.
 
 DAO:
-- acesso ao banco.
+- acesso ao banco e todo o SQL.
 
 Model:
 - entidades.
 
 Util:
 - funções auxiliares.
+
+Nesta fase do protótipo, não será utilizada camada `service`. Ela somente
+poderá ser introduzida futuramente se uma necessidade concreta justificar a
+mudança e após seu registro na documentação arquitetônica.
 
 ---
 

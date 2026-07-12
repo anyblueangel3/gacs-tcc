@@ -95,20 +95,28 @@ br.uel.gacs
 ├── controller
 ├── dao
 ├── model
-├── service
 └── util
 ```
 
 Responsabilidades gerais:
 
 * `application`: inicialização e composição da aplicação;
-* `controller`: interação entre a interface JavaFX e os serviços;
-* `service`: regras de negócio e coordenação das operações;
+* `controller`: integração com a interface JavaFX, validações, regras do processo e coordenação de um ou mais DAOs;
 * `dao`: persistência e acesso ao banco de dados;
 * `model`: representação das entidades do domínio;
 * `util`: recursos auxiliares reutilizáveis.
 
 Os módulos devem possuir responsabilidades claras e baixo acoplamento.
+
+O fluxo arquitetônico desta fase é:
+
+```text
+Interface JavaFX → Controller → um ou mais DAOs → MySQL
+```
+
+Não será utilizada uma camada `service` na versão atual. Sua eventual criação
+dependerá de uma necessidade concreta identificada durante a evolução do
+projeto e de nova decisão arquitetônica documentada.
 
 ---
 

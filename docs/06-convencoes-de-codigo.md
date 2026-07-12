@@ -27,7 +27,6 @@ application
 controller
 dao
 model
-service
 util
 ```
 
@@ -115,9 +114,14 @@ Classes públicas devem possuir Javadoc sucinto.
 # Organização
 
 - SQL apenas em DAO.
-- Regras de negócio em Service.
+- Regras do processo, validações e coordenação entre DAOs em Controller.
 - Model representa apenas entidades.
-- Controller não acessa banco diretamente.
+- Controller utiliza DAOs, mas não contém SQL.
+- Operações interligadas podem ser coordenadas por um único controller, sem a
+  obrigação de criar um controller para cada DAO envolvido.
+
+Não utilizar camada `service` nesta fase do protótipo. Sua eventual introdução
+dependerá de necessidade concreta e de nova decisão arquitetônica documentada.
 
 ---
 

@@ -28,8 +28,11 @@ Este documento define as regras de negócio que devem ser respeitadas pela aplic
 - Toda coluna pertence a um único experimento.
 - O rótulo é único dentro do experimento.
 - O rótulo segue a sequência A, B, ..., AX.
+- O rótulo é atribuído automaticamente e não é digitado, colado ou importado.
 - O rótulo é permanente após ser atribuído.
 - O nome da coluna pode ser alterado sem alterar o rótulo.
+- O nome descritivo é independente do rótulo e pode vir de digitação, colagem
+  ou importação.
 
 ---
 

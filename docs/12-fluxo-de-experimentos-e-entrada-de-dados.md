@@ -73,6 +73,17 @@ A navegação seguirá inicialmente estas regras:
 - setas: navegação livre;
 - `Delete`: limpa o valor selecionado.
 
+Um clique simples selecionará a célula e o início da digitação abrirá sua
+edição imediatamente. Ao confirmar uma célula da última linha com `Enter`, uma
+nova linha vazia será criada automaticamente.
+
+Cada cabeçalho será fixo durante a rolagem vertical e possuirá dois níveis: o
+rótulo posicional automático na parte superior e, abaixo dele, um campo para o
+nome descritivo da coluna. O nome poderá ser editado diretamente no cabeçalho e
+não fará parte das linhas de dados. O avanço por `Enter` moverá o cursor para a
+célula inferior sem forçar o reposicionamento da planilha enquanto essa célula
+já estiver visível.
+
 A grade deverá ser virtualizada e separar os dados numéricos dos componentes
 visuais. O modelo admite até 50 colunas e 10.000 medidas por coluna, totalizando
 até 500.000 valores. Não deverão ser criados componentes JavaFX individuais
@@ -84,7 +95,42 @@ processadas fora da thread gráfica e persistidas em lotes.
 Ao acionar `Colar de Planilha`, o GACS lerá imediatamente o texto presente na
 área de transferência. O bloco somente será colocado na grade se possuir linhas
 retangulares, respeitar os limites de 50 colunas e 10.000 medidas e contiver
-valores numéricos válidos, admitindo uma primeira linha de cabeçalhos.
+valores numéricos válidos.
+
+Opcionalmente, a primeira linha poderá conter os nomes das colunas. Nesse caso,
+cada valor dessa linha será utilizado para preencher o atributo
+`nomeColuna` da respectiva entidade `Coluna` criada para o experimento. Todas
+as demais linhas deverão conter exclusivamente valores numéricos válidos.
+
+O atributo `rotulo` não será obtido dessa primeira linha. Ele será atribuído
+automaticamente conforme a posição da coluna e exibido no padrão A, B, ...,
+Z, AA, ..., AX. Rótulo e nome da coluna são informações independentes.
+
+## 5.1 Modelo dos dados experimentais
+
+O modelo inicial do GACS trabalha exclusivamente com séries numéricas.
+
+Cada entidade `Coluna` representa uma variável experimental e possui, entre
+outros atributos, um `nomeColuna`, armazenado como texto.
+
+Os valores associados a essa coluna, armazenados em `DadosColuna`, serão sempre
+numéricos.
+
+Assim, no modelo de dados:
+
+- a entidade `Coluna` armazena o nome da variável experimental;
+- a entidade `DadosColuna` armazena exclusivamente valores numéricos.
+
+Essa regra será aplicada de forma uniforme à digitação manual, à colagem de
+planilhas e à importação de arquivos.
+
+A restrição foi adotada deliberadamente para simplificar a validação da entrada,
+a persistência dos dados, a geração de gráficos e as futuras rotinas de análise
+e caracterização de componentes semicondutores.
+
+Caso versões futuras do sistema necessitem armazenar informações textuais
+adicionais, isso deverá ocorrer por meio de novas entidades ou novos atributos,
+não alterando a natureza numérica dos dados experimentais.
 
 ## 6. Curvas e gráficos
 

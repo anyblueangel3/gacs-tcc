@@ -130,12 +130,17 @@ Exemplo conceitual:
 
 O rótulo:
 
-- somente será atribuído quando a coluna passar a existir com dados;
+- será atribuído automaticamente pela aplicação conforme a posição de criação
+  da coluna, sem digitação, colagem ou importação pelo usuário;
 - deverá ser único dentro do experimento;
 - permanecerá associado à mesma coluna durante toda a sua existência;
 - não deverá ser reutilizado por outra coluna do mesmo experimento enquanto a coluna original existir.
 
 A conversão entre o valor numérico e o rótulo visual pertence à aplicação. Não será criada uma tabela específica para os rótulos.
+
+O rótulo e o nome são informações independentes. `rotulo` identifica a posição
+padronizada da coluna; `nomeColuna` contém o cabeçalho descritivo digitado,
+colado ou importado e poderá ficar vazio.
 
 ---
 
