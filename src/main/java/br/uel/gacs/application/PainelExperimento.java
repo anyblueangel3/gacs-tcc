@@ -87,6 +87,8 @@ public final class PainelExperimento {
         VBox.setVgrow(tabela, Priority.ALWAYS); return raiz;
     }
 
+    public Long getIdExperimento() { return experimento.getId(); }
+
     private TableView<Integer> criarTabela() {
         TableView<Integer> tabela = new TableView<>();
         tabela.setEditable(true);

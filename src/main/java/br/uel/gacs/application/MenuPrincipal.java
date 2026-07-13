@@ -22,16 +22,18 @@ public final class MenuPrincipal {
     private final Runnable acaoColarPlanilha;
     private final Runnable acaoImportarCsv;
     private final Runnable acaoDigitarDados;
+    private final Runnable acaoNovoGrafico;
     private Button botaoNovoGrafico;
     private MenuItem itemNovoGrafico;
 
     public MenuPrincipal(Window janela, Runnable acaoSair, Runnable acaoCadastroUsuarios,
                          Runnable acaoNovoExperimento, Runnable acaoCarregarExperimento,
                          Runnable acaoColarPlanilha, Runnable acaoImportarCsv,
-                         Runnable acaoDigitarDados) {
+                         Runnable acaoDigitarDados, Runnable acaoNovoGrafico) {
         if (janela == null || acaoSair == null || acaoCadastroUsuarios == null
                 || acaoNovoExperimento == null || acaoCarregarExperimento == null
-                || acaoColarPlanilha == null || acaoImportarCsv == null || acaoDigitarDados == null) {
+                || acaoColarPlanilha == null || acaoImportarCsv == null || acaoDigitarDados == null
+                || acaoNovoGrafico == null) {
             throw new IllegalArgumentException("A janela e as ações devem ser informadas.");
         }
         this.janela = janela;
@@ -42,6 +44,7 @@ public final class MenuPrincipal {
         this.acaoColarPlanilha = acaoColarPlanilha;
         this.acaoImportarCsv = acaoImportarCsv;
         this.acaoDigitarDados = acaoDigitarDados;
+        this.acaoNovoGrafico = acaoNovoGrafico;
     }
 
     /** Cria a região superior composta pela barra de menus e pelos atalhos. */
@@ -55,7 +58,7 @@ public final class MenuPrincipal {
                 criarItem("Novo Experimento", acaoNovoExperimento),
                 criarItem("Carregar Experimento", acaoCarregarExperimento),
                 criarItem("Importar arquivo CSV", acaoImportarCsv),
-                itemNovoGrafico = criarItemProvisorio("Novo Gráfico"),
+                itemNovoGrafico = criarItem("Novo Gráfico", acaoNovoGrafico),
                 new SeparatorMenuItem(),
                 criarItem("Sair", acaoSair));
 
@@ -81,7 +84,7 @@ public final class MenuPrincipal {
 
         novoExperimento.setOnAction(evento -> acaoNovoExperimento.run());
         carregarExperimento.setOnAction(evento -> acaoCarregarExperimento.run());
-        botaoNovoGrafico.setOnAction(evento -> informarFuncionalidadeFutura("Novo Gráfico"));
+        botaoNovoGrafico.setOnAction(evento -> acaoNovoGrafico.run());
         colarPlanilha.setOnAction(evento -> acaoColarPlanilha.run());
         importarCsv.setOnAction(evento -> acaoImportarCsv.run());
         digitarDados.setOnAction(evento -> acaoDigitarDados.run());

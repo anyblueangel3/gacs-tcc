@@ -41,7 +41,7 @@ public final class TelaPrincipal {
         menu=new MenuPrincipal(janela,acaoSair,()->new TelaCadastroUsuarios(janela).exibir(),
                 ()->iniciarNovo(null),this::exibirListaExperimentos,this::colarPlanilha,
                 this::importarCsv,
-                this::digitarDados);
+                this::digitarDados, this::novoGrafico);
         raiz.setTop(menu.criar()); raiz.setBottom(criarBarraEstado(usuario));
         raiz.setStyle("-fx-background-color: #f7f9fb;"); exibirListaExperimentos(); return raiz;
     }
@@ -82,6 +82,10 @@ public final class TelaPrincipal {
     private void digitarDados() {
         if (painelAtual != null) painelAtual.adicionarColunaParaDigitacao();
         else iniciarNovo(criarPlanilhaDigitacao());
+    }
+
+    private void novoGrafico() {
+        if (painelAtual != null) new TelaGraficos(janela, painelAtual.getIdExperimento()).exibir();
     }
 
     private void colarPlanilha() {
