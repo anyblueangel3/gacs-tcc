@@ -109,6 +109,43 @@ public final class PlanilhaExperimento {
         medidas.add(new ArrayList<>(valores));
     }
 
+    /**
+     * Acrescenta à direita todas as colunas de outra planilha, preservando os
+     * dados existentes. Linhas ausentes em qualquer uma das planilhas são
+     * completadas com células vazias.
+     */
+    public void acrescentarColunas(PlanilhaExperimento outra) {
+        if (outra == null || outra.getQuantidadeColunas() == 0) {
+            throw new IllegalArgumentException("A planilha acrescentada não possui colunas.");
+        }
+        int totalColunas = getQuantidadeColunas() + outra.getQuantidadeColunas();
+        if (totalColunas > MAXIMO_COLUNAS) {
+            throw new IllegalArgumentException("A operação ultrapassaria o limite de 50 colunas.");
+        }
+        int totalMedidas = Math.max(getQuantidadeMedidas(), outra.getQuantidadeMedidas());
+        if (totalMedidas > MAXIMO_MEDIDAS) {
+            throw new IllegalArgumentException("A operação ultrapassaria o limite de 10.000 medidas.");
+        }
+
+        List<String> novosNomes = new ArrayList<>(nomesColunas);
+        novosNomes.addAll(outra.nomesColunas);
+        List<List<Double>> novasMedidas = new ArrayList<>(totalMedidas);
+        for (int linha=0; linha<totalMedidas; linha++) {
+            List<Double> novaLinha = new ArrayList<>(Collections.nCopies(totalColunas, null));
+            if (linha < medidas.size()) {
+                for (int coluna=0; coluna<nomesColunas.size(); coluna++)
+                    novaLinha.set(coluna, medidas.get(linha).get(coluna));
+            }
+            if (linha < outra.medidas.size()) {
+                for (int coluna=0; coluna<outra.nomesColunas.size(); coluna++)
+                    novaLinha.set(nomesColunas.size()+coluna, outra.medidas.get(linha).get(coluna));
+            }
+            novasMedidas.add(novaLinha);
+        }
+        nomesColunas.clear(); nomesColunas.addAll(novosNomes);
+        medidas.clear(); medidas.addAll(novasMedidas);
+    }
+
     public Double getValor(int linha, int coluna) {
         validarCelula(linha, coluna);
         return medidas.get(linha).get(coluna);

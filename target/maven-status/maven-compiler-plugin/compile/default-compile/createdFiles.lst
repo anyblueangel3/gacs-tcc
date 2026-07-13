@@ -36,6 +36,7 @@ br\uel\gacs\dao\DadoColunaDAO.class
 br\uel\gacs\controller\UsuarioCtlr.class
 br\uel\gacs\dao\DadoColunaDAO$Op.class
 br\uel\gacs\application\Autorizador.class
+br\uel\gacs\util\LeitorCsv.class
 br\uel\gacs\model\CurvaGrafico.class
 br\uel\gacs\dao\GraficoDAO$Op.class
 br\uel\gacs\application\MenuPrincipal.class

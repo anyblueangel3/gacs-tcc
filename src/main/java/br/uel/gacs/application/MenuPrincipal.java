@@ -20,16 +20,18 @@ public final class MenuPrincipal {
     private final Runnable acaoNovoExperimento;
     private final Runnable acaoCarregarExperimento;
     private final Runnable acaoColarPlanilha;
+    private final Runnable acaoImportarCsv;
     private final Runnable acaoDigitarDados;
     private Button botaoNovoGrafico;
     private MenuItem itemNovoGrafico;
 
     public MenuPrincipal(Window janela, Runnable acaoSair, Runnable acaoCadastroUsuarios,
                          Runnable acaoNovoExperimento, Runnable acaoCarregarExperimento,
-                         Runnable acaoColarPlanilha, Runnable acaoDigitarDados) {
+                         Runnable acaoColarPlanilha, Runnable acaoImportarCsv,
+                         Runnable acaoDigitarDados) {
         if (janela == null || acaoSair == null || acaoCadastroUsuarios == null
                 || acaoNovoExperimento == null || acaoCarregarExperimento == null
-                || acaoColarPlanilha == null || acaoDigitarDados == null) {
+                || acaoColarPlanilha == null || acaoImportarCsv == null || acaoDigitarDados == null) {
             throw new IllegalArgumentException("A janela e as ações devem ser informadas.");
         }
         this.janela = janela;
@@ -38,6 +40,7 @@ public final class MenuPrincipal {
         this.acaoNovoExperimento = acaoNovoExperimento;
         this.acaoCarregarExperimento = acaoCarregarExperimento;
         this.acaoColarPlanilha = acaoColarPlanilha;
+        this.acaoImportarCsv = acaoImportarCsv;
         this.acaoDigitarDados = acaoDigitarDados;
     }
 
@@ -51,6 +54,7 @@ public final class MenuPrincipal {
         menuArquivo.getItems().addAll(
                 criarItem("Novo Experimento", acaoNovoExperimento),
                 criarItem("Carregar Experimento", acaoCarregarExperimento),
+                criarItem("Importar arquivo CSV", acaoImportarCsv),
                 itemNovoGrafico = criarItemProvisorio("Novo Gráfico"),
                 new SeparatorMenuItem(),
                 criarItem("Sair", acaoSair));
@@ -72,17 +76,19 @@ public final class MenuPrincipal {
         Button carregarExperimento = criarBotaoAtalho("Carregar\nExperimento");
         botaoNovoGrafico = criarBotaoAtalho("Novo\nGráfico");
         Button colarPlanilha = criarBotaoAtalho("Colar de\nPlanilha");
+        Button importarCsv = criarBotaoAtalho("Importar\nCSV");
         Button digitarDados = criarBotaoAtalho("Digitar\nDados");
 
         novoExperimento.setOnAction(evento -> acaoNovoExperimento.run());
         carregarExperimento.setOnAction(evento -> acaoCarregarExperimento.run());
         botaoNovoGrafico.setOnAction(evento -> informarFuncionalidadeFutura("Novo Gráfico"));
         colarPlanilha.setOnAction(evento -> acaoColarPlanilha.run());
+        importarCsv.setOnAction(evento -> acaoImportarCsv.run());
         digitarDados.setOnAction(evento -> acaoDigitarDados.run());
         definirExperimentoAberto(false);
 
         HBox faixa = new HBox(12, novoExperimento, carregarExperimento, botaoNovoGrafico,
-                colarPlanilha, digitarDados);
+                colarPlanilha, importarCsv, digitarDados);
         faixa.setAlignment(Pos.CENTER_LEFT);
         faixa.setPadding(new Insets(14, 18, 14, 18));
         faixa.setStyle("-fx-background-color: #eaf1f8; -fx-border-color: #c5d3e0; "

@@ -31,6 +31,7 @@ public final class PainelExperimento {
     private boolean alterado;
     private Runnable acaoMarcarAlterado = () -> { };
     private String textoInicialEdicao;
+    private TableView<Integer> tabela;
 
     public PainelExperimento(Window janela, ExperimentoCtlr controller, Experimento experimento,
                              String proprietario, PlanilhaExperimento planilha,
@@ -55,7 +56,7 @@ public final class PainelExperimento {
         formulario.add(new Label("Observações:"), 0, 2); formulario.add(observacoes, 1, 2, 3, 1);
         GridPane.setHgrow(nome, Priority.ALWAYS); GridPane.setHgrow(observacoes, Priority.ALWAYS);
 
-        TableView<Integer> tabela = criarTabela();
+        tabela = criarTabela();
         Label estado = new Label(experimento.getId() == null ? "Novo — ainda não salvo" : "Experimento salvo");
         Button salvar = new Button("Salvar Experimento");
         Button fechar = new Button("Fechar Experimento");
@@ -73,8 +74,7 @@ public final class PainelExperimento {
                 experimento.setNomeExperimento(nome.getText().trim());
                 experimento.setDataExperimento(LocalDateTime.parse(data.getText().trim(), DATA));
                 experimento.setObservacoes(observacoes.getText());
-                if (experimento.getId() == null) controller.salvarNovo(experimento);
-                else controller.salvarAlteracoes(experimento);
+                controller.salvarCompleto(experimento, planilha);
                 alterado = false; estado.setText("Experimento salvo");
             } catch (DateTimeParseException x) { erro("Use o formato de data dd/mm/aaaa hh:mm.");
             } catch (IllegalArgumentException x) { erro(x.getMessage());
@@ -112,14 +112,38 @@ public final class PainelExperimento {
             catch (IllegalArgumentException | IllegalStateException x) { erro(x.getMessage()); }
         });
         adicionarColuna.setOnAction(e -> {
-            TextInputDialog dialogo = new TextInputDialog(); dialogo.initOwner(janela);
-            dialogo.setTitle("Nova coluna"); dialogo.setHeaderText("Informe o nome da nova coluna.");
-            dialogo.showAndWait().ifPresent(nome -> {
-                try { planilha.adicionarColuna(nome); reconstruirColunas(tabela); acaoMarcarAlterado.run(); }
-                catch (IllegalArgumentException x) { erro(x.getMessage()); }
-            });
+            adicionarColunaParaDigitacao();
         });
         return new HBox(8, adicionarLinha, adicionarColuna);
+    }
+
+    /** Acrescenta uma coluna à planilha aberta sem descartar os dados existentes. */
+    public void adicionarColunaParaDigitacao() {
+        if (tabela == null) return;
+        TextInputDialog dialogo = new TextInputDialog(); dialogo.initOwner(janela);
+        dialogo.setTitle("Nova coluna"); dialogo.setHeaderText("Informe o nome da nova coluna.");
+        dialogo.showAndWait().ifPresent(nome -> {
+            try {
+                planilha.adicionarColuna(nome);
+                reconstruirColunas(tabela);
+                acaoMarcarAlterado.run();
+                int novaColuna=planilha.getQuantidadeColunas()-1;
+                if(planilha.getQuantidadeMedidas()==0){planilha.adicionarMedidaVazia();atualizarLinhas(tabela);}
+                Platform.runLater(()->selecionarEEditar(tabela,0,novaColuna));
+            } catch (IllegalArgumentException | IllegalStateException x) { erro(x.getMessage()); }
+        });
+    }
+
+    /** Acrescenta um bloco colado ou importado à direita da grade atual. */
+    public void acrescentarPlanilha(PlanilhaExperimento novaPlanilha) {
+        int primeiraNovaColuna=planilha.getQuantidadeColunas();
+        try {
+            planilha.acrescentarColunas(novaPlanilha);
+            reconstruirColunas(tabela);
+            acaoMarcarAlterado.run();
+            if(planilha.getQuantidadeMedidas()>0)
+                Platform.runLater(()->selecionarEEditar(tabela,0,primeiraNovaColuna));
+        } catch(IllegalArgumentException | IllegalStateException e) { erro(e.getMessage()); }
     }
 
     private void reconstruirColunas(TableView<Integer> tabela) {

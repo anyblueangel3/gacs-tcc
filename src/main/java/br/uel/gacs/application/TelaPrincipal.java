@@ -4,6 +4,8 @@ import br.uel.gacs.controller.ExperimentoCtlr;
 import br.uel.gacs.controller.ExperimentoCtlr.ExperimentoListado;
 import br.uel.gacs.model.Experimento;
 import br.uel.gacs.model.Usuario;
+import br.uel.gacs.util.LeitorCsv;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -17,6 +19,7 @@ import javafx.scene.control.*;
 import javafx.scene.input.Clipboard;
 import javafx.scene.layout.*;
 import javafx.stage.Window;
+import javafx.stage.FileChooser;
 
 /** Janela principal e espaço permanente de trabalho do GACS. */
 public final class TelaPrincipal {
@@ -26,6 +29,7 @@ public final class TelaPrincipal {
     private final ExperimentoCtlr controller = new ExperimentoCtlr();
     private final BorderPane raiz = new BorderPane();
     private MenuPrincipal menu;
+    private PainelExperimento painelAtual;
 
     public TelaPrincipal(Window janela, Runnable acaoSair) {
         if (janela == null || acaoSair == null) throw new IllegalArgumentException("A janela e a ação de saída devem ser informadas.");
@@ -36,12 +40,14 @@ public final class TelaPrincipal {
         Usuario usuario=SessaoUsuario.exigirUsuarioLogado();
         menu=new MenuPrincipal(janela,acaoSair,()->new TelaCadastroUsuarios(janela).exibir(),
                 ()->iniciarNovo(null),this::exibirListaExperimentos,this::colarPlanilha,
-                ()->iniciarNovo(criarPlanilhaDigitacao()));
+                this::importarCsv,
+                this::digitarDados);
         raiz.setTop(menu.criar()); raiz.setBottom(criarBarraEstado(usuario));
         raiz.setStyle("-fx-background-color: #f7f9fb;"); exibirListaExperimentos(); return raiz;
     }
 
     private void exibirListaExperimentos() {
+        painelAtual = null;
         menu.definirExperimentoAberto(false);
         Usuario usuario=SessaoUsuario.exigirUsuarioLogado();
         Label titulo=new Label("Experimentos disponíveis");
@@ -61,14 +67,45 @@ public final class TelaPrincipal {
         VBox centro=new VBox(12,titulo,tabela,abrir);centro.setPadding(new Insets(18));VBox.setVgrow(tabela,Priority.ALWAYS);raiz.setCenter(centro);
     }
 
-    private void abrir(ExperimentoListado item){if(item!=null)exibirExperimento(item.experimento(),item.proprietario(),null);}
+    private void abrir(ExperimentoListado item){
+        if(item==null)return;
+        try { exibirExperimento(item.experimento(),item.proprietario(),controller.carregarPlanilha(item.experimento().getId())); }
+        catch(SQLException e){erro("Não foi possível carregar os dados do experimento.");}
+    }
     private void iniciarNovo(PlanilhaExperimento planilha){Usuario u=SessaoUsuario.exigirUsuarioLogado();exibirExperimento(controller.criarNovo(u.getId()),u.getNome(),planilha);}
-    private void exibirExperimento(Experimento e,String proprietario,PlanilhaExperimento planilha){menu.definirExperimentoAberto(true);raiz.setCenter(new PainelExperimento(janela,controller,e,proprietario,planilha,this::exibirListaExperimentos).criar());}
+    private void exibirExperimento(Experimento e,String proprietario,PlanilhaExperimento planilha){
+        menu.definirExperimentoAberto(true);
+        painelAtual=new PainelExperimento(janela,controller,e,proprietario,planilha,this::exibirListaExperimentos);
+        raiz.setCenter(painelAtual.criar());
+    }
+
+    private void digitarDados() {
+        if (painelAtual != null) painelAtual.adicionarColunaParaDigitacao();
+        else iniciarNovo(criarPlanilhaDigitacao());
+    }
 
     private void colarPlanilha() {
         String texto=Clipboard.getSystemClipboard().getString();
         if(texto==null||texto.isBlank()){erro("A área de transferência não contém dados de texto.");return;}
-        try{iniciarNovo(PlanilhaExperimento.deCelulas(separarCelulas(texto)));}catch(IllegalArgumentException e){erro(e.getMessage());}
+        try{receberPlanilha(PlanilhaExperimento.deCelulas(separarCelulas(texto)));}catch(IllegalArgumentException e){erro(e.getMessage());}
+    }
+
+    private void importarCsv() {
+        FileChooser seletor = new FileChooser();
+        seletor.setTitle("Importar dados de arquivo CSV");
+        seletor.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("Arquivos CSV", "*.csv"),
+                new FileChooser.ExtensionFilter("Todos os arquivos", "*.*"));
+        java.io.File arquivo = seletor.showOpenDialog(janela);
+        if (arquivo == null) return;
+        try { receberPlanilha(PlanilhaExperimento.deCelulas(LeitorCsv.ler(arquivo.toPath()))); }
+        catch (IOException e) { erro("Não foi possível ler o arquivo selecionado."); }
+        catch (IllegalArgumentException e) { erro(e.getMessage()); }
+    }
+
+    private void receberPlanilha(PlanilhaExperimento planilha) {
+        if(painelAtual==null)iniciarNovo(planilha);
+        else painelAtual.acrescentarPlanilha(planilha);
     }
 
     private List<List<String>> separarCelulas(String texto) {
