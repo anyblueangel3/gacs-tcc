@@ -108,6 +108,7 @@ public final class PainelExperimento {
     private HBox criarFerramentasPlanilha(TableView<Integer> tabela) {
         Button adicionarLinha = new Button("Adicionar linha");
         Button adicionarColuna = new Button("Adicionar coluna");
+        Button excluirColuna = new Button("Excluir coluna");
 
         adicionarLinha.setOnAction(e -> {
             try { planilha.adicionarMedidaVazia(); atualizarLinhas(tabela); acaoMarcarAlterado.run(); }
@@ -116,7 +117,31 @@ public final class PainelExperimento {
         adicionarColuna.setOnAction(e -> {
             adicionarColunaParaDigitacao();
         });
-        return new HBox(8, adicionarLinha, adicionarColuna);
+        excluirColuna.setOnAction(e -> excluirColunaSelecionada(tabela));
+        return new HBox(8, adicionarLinha, adicionarColuna, excluirColuna);
+    }
+
+    private void excluirColunaSelecionada(TableView<Integer> tabela) {
+        if (planilha.getQuantidadeColunas() == 1) {
+            erro("O experimento deve manter ao menos uma coluna.");
+            return;
+        }
+        TablePosition<Integer, ?> selecionada = celulaSelecionada(tabela);
+        if (selecionada == null) {
+            erro("Selecione uma célula da coluna que deseja excluir.");
+            return;
+        }
+        int indice = selecionada.getColumn();
+        String rotulo = planilha.getRotuloColuna(indice);
+        Alert confirmacao = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmacao.initOwner(janela);
+        confirmacao.setTitle("Excluir coluna");
+        confirmacao.setHeaderText("Excluir definitivamente a coluna " + rotulo + "?");
+        confirmacao.setContentText("Os dados da coluna e as curvas que a utilizam serão excluídos ao salvar o experimento. Os rótulos das demais colunas serão preservados.");
+        if (confirmacao.showAndWait().filter(ButtonType.OK::equals).isEmpty()) return;
+        planilha.removerColuna(indice);
+        reconstruirColunas(tabela);
+        acaoMarcarAlterado.run();
     }
 
     /** Acrescenta uma coluna à planilha aberta sem descartar os dados existentes. */

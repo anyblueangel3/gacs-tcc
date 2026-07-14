@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import javax.imageio.ImageIO;
+import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Insets;
 import javafx.print.PageLayout;
@@ -25,6 +26,8 @@ import javafx.scene.image.WritableImage;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
+import javafx.scene.shape.Path;
 import javafx.scene.transform.Scale;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
@@ -93,7 +96,7 @@ public final class TelaPlotagemGrafico {
 
         LineChart<Number, Number> resultado = new LineChart<>(x, y);
         resultado.setTitle(grafico.getNome());
-        resultado.setCreateSymbols(false);
+        resultado.setCreateSymbols(true);
         resultado.setAnimated(false);
         resultado.setLegendVisible(true);
         resultado.setLegendSide(javafx.geometry.Side.BOTTOM);
@@ -108,7 +111,28 @@ public final class TelaPlotagemGrafico {
             serieOrigem.pontos().forEach(p -> serie.getData().add(new XYChart.Data<>(p.x(), p.y())));
             resultado.getData().add(serie);
         }
+        Platform.runLater(() -> estilizarMarcadores(resultado));
         return resultado;
+    }
+
+    /** Apresenta cada medida experimental como um círculo preenchido de 6 px. */
+    private void estilizarMarcadores(LineChart<Number, Number> grafico) {
+        grafico.applyCss();
+        grafico.layout();
+        for (XYChart.Series<Number, Number> serie : grafico.getData()) {
+            Paint cor = serie.getNode() instanceof Path linha ? linha.getStroke() : null;
+            if (cor == null) continue;
+            String corCss = cor.toString().replace("0x", "#");
+            for (XYChart.Data<Number, Number> ponto : serie.getData()) {
+                if (ponto.getNode() instanceof javafx.scene.layout.Region marcador) {
+                    marcador.setMinSize(6, 6);
+                    marcador.setPrefSize(6, 6);
+                    marcador.setMaxSize(6, 6);
+                    marcador.setStyle("-fx-background-color: " + corCss
+                            + "; -fx-background-radius: 3px; -fx-padding: 0;");
+                }
+            }
+        }
     }
 
     private javafx.util.StringConverter<Number> formatadorEixo() {

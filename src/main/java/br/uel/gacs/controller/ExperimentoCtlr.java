@@ -6,10 +6,15 @@ import br.uel.gacs.dao.ConexaoBanco;
 import br.uel.gacs.dao.DadoColunaDAO;
 import br.uel.gacs.dao.ExperimentoDAO;
 import br.uel.gacs.dao.UsuarioDAO;
+import br.uel.gacs.dao.CurvaDAO;
+import br.uel.gacs.dao.CurvaGraficoDAO;
+import br.uel.gacs.dao.GraficoDAO;
 import br.uel.gacs.model.Coluna;
 import br.uel.gacs.model.DadoColuna;
 import br.uel.gacs.model.Experimento;
 import br.uel.gacs.model.Usuario;
+import br.uel.gacs.model.Curva;
+import br.uel.gacs.model.Grafico;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -25,6 +30,9 @@ public final class ExperimentoCtlr {
     private final UsuarioDAO usuarioDAO;
     private final ColunaDAO colunaDAO;
     private final DadoColunaDAO dadoColunaDAO;
+    private final CurvaDAO curvaDAO = new CurvaDAO();
+    private final CurvaGraficoDAO curvaGraficoDAO = new CurvaGraficoDAO();
+    private final GraficoDAO graficoDAO = new GraficoDAO();
 
     public ExperimentoCtlr() {
         this(new ExperimentoDAO(), new UsuarioDAO(), new ColunaDAO(), new DadoColunaDAO());
@@ -81,13 +89,18 @@ public final class ExperimentoCtlr {
                 if (experimento.getId() == null) experimentoDAO.inserir(conexao, experimento);
                 else if (!experimentoDAO.atualizar(conexao, experimento)) throw new SQLException("O experimento não foi encontrado.");
                 List<Coluna> existentes = colunaDAO.listarPorExperimento(conexao, experimento.getId());
+                Map<Short, Coluna> existentesPorRotulo = new HashMap<>();
+                for (Coluna coluna : existentes) existentesPorRotulo.put(coluna.getRotulo(), coluna);
+                java.util.HashSet<Short> rotulosMantidos = new java.util.HashSet<>();
                 for (int coluna=0; coluna<planilha.getQuantidadeColunas(); coluna++) {
+                    short rotulo = planilha.getNumeroRotuloColuna(coluna);
+                    rotulosMantidos.add(rotulo);
                     Coluna entidade;
-                    if (coluna < existentes.size()) {
-                        entidade=existentes.get(coluna); entidade.setNomeColuna(planilha.getNomeColuna(coluna));
+                    if (existentesPorRotulo.containsKey(rotulo)) {
+                        entidade=existentesPorRotulo.get(rotulo); entidade.setNomeColuna(planilha.getNomeColuna(coluna));
                         if(!colunaDAO.atualizar(conexao,entidade))throw new SQLException("Não foi possível atualizar uma coluna.");
                     } else {
-                        entidade=new Coluna(null,experimento.getId(),(short)(coluna+1),planilha.getNomeColuna(coluna));
+                        entidade=new Coluna(null,experimento.getId(),rotulo,planilha.getNomeColuna(coluna));
                         colunaDAO.inserir(conexao,entidade);
                     }
                     dadoColunaDAO.excluirPorColuna(conexao,entidade.getId());
@@ -98,7 +111,8 @@ public final class ExperimentoCtlr {
                     }
                     dadoColunaDAO.inserirTodos(conexao,dados);
                 }
-                for(int i=existentes.size()-1;i>=planilha.getQuantidadeColunas();i--)colunaDAO.excluir(conexao,existentes.get(i).getId());
+                for (Coluna removida : existentes) if (!rotulosMantidos.contains(removida.getRotulo()))
+                    excluirColunaPersistida(conexao, removida.getId());
                 conexao.commit();
             } catch(SQLException|RuntimeException e) {
                 if(idOriginal==null)experimento.setId(null);
@@ -110,7 +124,7 @@ public final class ExperimentoCtlr {
     public PlanilhaExperimento carregarPlanilha(Long idExperimento) throws SQLException {
         PlanilhaExperimento planilha=new PlanilhaExperimento();
         List<Coluna> colunas=colunaDAO.listarPorExperimento(idExperimento);
-        for(Coluna coluna:colunas)planilha.adicionarColuna(coluna.getNomeColuna());
+        for(Coluna coluna:colunas)planilha.adicionarColuna(coluna.getNomeColuna(), coluna.getRotulo());
         if(colunas.isEmpty())return planilha;
         java.util.ArrayList<List<DadoColuna>> dados=new java.util.ArrayList<>();
         int quantidadeLinhas=0;
@@ -151,6 +165,44 @@ public final class ExperimentoCtlr {
     }
 
     public record ExperimentoListado(Experimento experimento, String proprietario) { }
+
+    public void excluirExperimento(Experimento experimento, Usuario usuario, boolean administrador) throws SQLException {
+        exigirPermissao(experimento, usuario, administrador);
+        if (experimento.getId() == null) return;
+        try (Connection conexao = ConexaoBanco.obterConexaoBanco()) {
+            boolean auto = conexao.getAutoCommit(); conexao.setAutoCommit(false);
+            try {
+                List<Grafico> graficos = graficoDAO.listarPorExperimento(conexao, experimento.getId());
+                for (Grafico grafico : graficos)
+                    curvaGraficoDAO.excluirPorGrafico(conexao, grafico.getId());
+                for (Curva curva : curvaDAO.listarPorExperimento(conexao, experimento.getId()))
+                    curvaDAO.excluir(conexao, curva.getId());
+                for (Grafico grafico : graficos)
+                    graficoDAO.excluir(conexao, grafico.getId());
+                for (Coluna coluna : colunaDAO.listarPorExperimento(conexao, experimento.getId())) {
+                    dadoColunaDAO.excluirPorColuna(conexao, coluna.getId());
+                    colunaDAO.excluir(conexao, coluna.getId());
+                }
+                if (!experimentoDAO.excluir(conexao, experimento.getId())) throw new SQLException("O experimento não foi encontrado.");
+                conexao.commit();
+            } catch (SQLException | RuntimeException e) { try { conexao.rollback(); } catch (SQLException r) { e.addSuppressed(r); } throw e; }
+            finally { try { conexao.setAutoCommit(auto); } catch (SQLException ignored) { } }
+        }
+    }
+
+    private void excluirColunaPersistida(Connection conexao, Long idColuna) throws SQLException {
+        for (Curva curva : curvaDAO.listarPorColuna(conexao, idColuna)) {
+            curvaGraficoDAO.excluirPorCurva(conexao, curva.getId());
+            curvaDAO.excluir(conexao, curva.getId());
+        }
+        dadoColunaDAO.excluirPorColuna(conexao, idColuna);
+        if (!colunaDAO.excluir(conexao, idColuna)) throw new SQLException("A coluna não foi encontrada.");
+    }
+
+    private void exigirPermissao(Experimento experimento, Usuario usuario, boolean administrador) {
+        if (experimento == null || usuario == null || (!administrador && !usuario.getId().equals(experimento.getIdUsuario())))
+            throw new SecurityException("Somente o proprietário do experimento ou um administrador pode excluí-lo.");
+    }
 
     private void validar(Experimento experimento) {
         if (experimento == null) throw new IllegalArgumentException("O experimento deve ser informado.");

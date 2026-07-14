@@ -14,6 +14,7 @@ public final class PlanilhaExperimento {
     public static final int MAXIMO_MEDIDAS = 10_000;
 
     private final List<String> nomesColunas = new ArrayList<>();
+    private final List<Short> rotulosColunas = new ArrayList<>();
     private final List<List<Double>> medidas = new ArrayList<>();
 
     /** Cria uma planilha vazia para entrada por digitação. */
@@ -68,10 +69,15 @@ public final class PlanilhaExperimento {
         return nomesColunas.get(coluna);
     }
 
-    /** Retorna o rótulo posicional da coluna segundo a convenção A, ..., Z, AA, ..., AX. */
+    /** Retorna o rótulo permanente da coluna segundo a convenção A, ..., Z, AA, ..., AX. */
     public String getRotuloColuna(int coluna) {
         validarIndiceColuna(coluna);
-        return rotuloColuna(coluna);
+        return rotuloColuna(rotulosColunas.get(coluna) - 1);
+    }
+
+    public short getNumeroRotuloColuna(int coluna) {
+        validarIndiceColuna(coluna);
+        return rotulosColunas.get(coluna);
     }
 
     public void setNomeColuna(int coluna, String nome) {
@@ -80,13 +86,31 @@ public final class PlanilhaExperimento {
     }
 
     public void adicionarColuna(String nome) {
+        int proximoRotulo = rotulosColunas.stream().mapToInt(Short::intValue).max().orElse(0) + 1;
+        adicionarColuna(nome, (short) proximoRotulo);
+    }
+
+    /** Adiciona uma coluna preservando o rótulo persistido no banco. */
+    public void adicionarColuna(String nome, short rotulo) {
         if (nomesColunas.size() >= MAXIMO_COLUNAS) {
             throw new IllegalArgumentException("A planilha admite no máximo 50 colunas.");
         }
-        nomesColunas.add(validarNomeColuna(nome, nomesColunas.size()));
+        if (rotulo < 1 || rotulo > MAXIMO_COLUNAS || rotulosColunas.contains(rotulo)) {
+            throw new IllegalArgumentException("O rótulo informado para a coluna é inválido ou já está em uso.");
+        }
+        nomesColunas.add(validarNomeColuna(nome, rotulo - 1));
+        rotulosColunas.add(rotulo);
         for (List<Double> linha : medidas) {
             linha.add(null);
         }
+    }
+
+    /** Remove uma coluna sem alterar os rótulos permanentes das demais. */
+    public void removerColuna(int coluna) {
+        validarIndiceColuna(coluna);
+        nomesColunas.remove(coluna);
+        rotulosColunas.remove(coluna);
+        for (List<Double> linha : medidas) linha.remove(coluna);
     }
 
     /** Adiciona uma linha vazia para posterior preenchimento por digitação. */
@@ -128,7 +152,13 @@ public final class PlanilhaExperimento {
         }
 
         List<String> novosNomes = new ArrayList<>(nomesColunas);
+        List<Short> novosRotulos = new ArrayList<>(rotulosColunas);
+        int proximoRotulo = novosRotulos.stream().mapToInt(Short::intValue).max().orElse(0) + 1;
+        if (proximoRotulo + outra.getQuantidadeColunas() - 1 > MAXIMO_COLUNAS) {
+            throw new IllegalArgumentException("Não há rótulos disponíveis para todas as novas colunas.");
+        }
         novosNomes.addAll(outra.nomesColunas);
+        for (int i = 0; i < outra.getQuantidadeColunas(); i++) novosRotulos.add((short) (proximoRotulo + i));
         List<List<Double>> novasMedidas = new ArrayList<>(totalMedidas);
         for (int linha=0; linha<totalMedidas; linha++) {
             List<Double> novaLinha = new ArrayList<>(Collections.nCopies(totalColunas, null));
@@ -143,6 +173,7 @@ public final class PlanilhaExperimento {
             novasMedidas.add(novaLinha);
         }
         nomesColunas.clear(); nomesColunas.addAll(novosNomes);
+        rotulosColunas.clear(); rotulosColunas.addAll(novosRotulos);
         medidas.clear(); medidas.addAll(novasMedidas);
     }
 

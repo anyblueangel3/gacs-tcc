@@ -60,11 +60,33 @@ public final class TelaPrincipal {
         tabela.getColumns().addAll(nome,data,proprietario);
         tabela.setPlaceholder(new Label("Nenhum experimento encontrado."));
         Button abrir=new Button("Abrir Experimento");abrir.disableProperty().bind(tabela.getSelectionModel().selectedItemProperty().isNull());
+        Button excluir=new Button("Excluir Experimento");
+        excluir.disableProperty().bind(tabela.getSelectionModel().selectedItemProperty().isNull());
         abrir.setOnAction(e->abrir(tabela.getSelectionModel().getSelectedItem()));
+        excluir.setOnAction(e->excluirExperimento(tabela.getSelectionModel().getSelectedItem()));
         tabela.setRowFactory(tv->{TableRow<ExperimentoListado> linha=new TableRow<>();linha.setOnMouseClicked(e->{if(e.getClickCount()==2&&!linha.isEmpty())abrir(linha.getItem());});return linha;});
         try { tabela.setItems(FXCollections.observableArrayList(controller.listarVisiveis(usuario,Autorizador.usuarioAtualEhAdministrador()))); }
         catch(SQLException e){erro("Não foi possível carregar a lista de experimentos.");}
-        VBox centro=new VBox(12,titulo,tabela,abrir);centro.setPadding(new Insets(18));VBox.setVgrow(tabela,Priority.ALWAYS);raiz.setCenter(centro);
+        VBox centro=new VBox(12,titulo,tabela,new HBox(8,abrir,excluir));centro.setPadding(new Insets(18));VBox.setVgrow(tabela,Priority.ALWAYS);raiz.setCenter(centro);
+    }
+
+    private void excluirExperimento(ExperimentoListado item) {
+        if (item == null) return;
+        Usuario usuario = SessaoUsuario.exigirUsuarioLogado();
+        boolean podeExcluir = Autorizador.usuarioAtualEhAdministrador()
+                || usuario.getId().equals(item.experimento().getIdUsuario());
+        if (!podeExcluir) { erro("Somente o proprietário do experimento ou um administrador pode excluí-lo."); return; }
+        Alert confirmacao = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmacao.initOwner(janela);
+        confirmacao.setTitle("Excluir experimento");
+        confirmacao.setHeaderText("Excluir definitivamente o experimento \"" + item.experimento().getNomeExperimento() + "\"?");
+        confirmacao.setContentText("Também serão excluídos suas colunas, dados, curvas e gráficos. Esta ação não poderá ser desfeita.");
+        if (confirmacao.showAndWait().filter(ButtonType.OK::equals).isEmpty()) return;
+        try {
+            controller.excluirExperimento(item.experimento(), usuario, Autorizador.usuarioAtualEhAdministrador());
+            exibirListaExperimentos();
+        } catch (SecurityException e) { erro(e.getMessage());
+        } catch (SQLException e) { erro("Não foi possível excluir o experimento."); }
     }
 
     private void abrir(ExperimentoListado item){

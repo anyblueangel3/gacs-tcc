@@ -58,7 +58,7 @@ public final class MenuPrincipal {
                 criarItem("Novo Experimento", acaoNovoExperimento),
                 criarItem("Carregar Experimento", acaoCarregarExperimento),
                 criarItem("Importar arquivo CSV", acaoImportarCsv),
-                itemNovoGrafico = criarItem("Novo Gráfico", acaoNovoGrafico),
+                itemNovoGrafico = criarItem("Gráfico", acaoNovoGrafico),
                 new SeparatorMenuItem(),
                 criarItem("Sair", acaoSair));
 
@@ -77,7 +77,7 @@ public final class MenuPrincipal {
     private HBox criarFaixaAtalhos() {
         Button novoExperimento = criarBotaoAtalho("Novo\nExperimento");
         Button carregarExperimento = criarBotaoAtalho("Carregar\nExperimento");
-        botaoNovoGrafico = criarBotaoAtalho("Novo\nGráfico");
+        botaoNovoGrafico = criarBotaoAtalho("Gráfico");
         Button colarPlanilha = criarBotaoAtalho("Colar de\nPlanilha");
         Button importarCsv = criarBotaoAtalho("Importar\nCSV");
         Button digitarDados = criarBotaoAtalho("Digitar\nDados");
