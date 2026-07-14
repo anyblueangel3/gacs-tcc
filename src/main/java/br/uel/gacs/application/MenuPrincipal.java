@@ -23,17 +23,20 @@ public final class MenuPrincipal {
     private final Runnable acaoImportarCsv;
     private final Runnable acaoDigitarDados;
     private final Runnable acaoNovoGrafico;
+    private final Runnable acaoCaracterizacao;
     private Button botaoNovoGrafico;
+    private Button botaoCaracterizacao;
     private MenuItem itemNovoGrafico;
 
     public MenuPrincipal(Window janela, Runnable acaoSair, Runnable acaoCadastroUsuarios,
                          Runnable acaoNovoExperimento, Runnable acaoCarregarExperimento,
                          Runnable acaoColarPlanilha, Runnable acaoImportarCsv,
-                         Runnable acaoDigitarDados, Runnable acaoNovoGrafico) {
+                         Runnable acaoDigitarDados, Runnable acaoNovoGrafico,
+                         Runnable acaoCaracterizacao) {
         if (janela == null || acaoSair == null || acaoCadastroUsuarios == null
                 || acaoNovoExperimento == null || acaoCarregarExperimento == null
                 || acaoColarPlanilha == null || acaoImportarCsv == null || acaoDigitarDados == null
-                || acaoNovoGrafico == null) {
+                || acaoNovoGrafico == null || acaoCaracterizacao == null) {
             throw new IllegalArgumentException("A janela e as ações devem ser informadas.");
         }
         this.janela = janela;
@@ -45,6 +48,7 @@ public final class MenuPrincipal {
         this.acaoImportarCsv = acaoImportarCsv;
         this.acaoDigitarDados = acaoDigitarDados;
         this.acaoNovoGrafico = acaoNovoGrafico;
+        this.acaoCaracterizacao = acaoCaracterizacao;
     }
 
     /** Cria a região superior composta pela barra de menus e pelos atalhos. */
@@ -78,6 +82,7 @@ public final class MenuPrincipal {
         Button novoExperimento = criarBotaoAtalho("Novo\nExperimento");
         Button carregarExperimento = criarBotaoAtalho("Carregar\nExperimento");
         botaoNovoGrafico = criarBotaoAtalho("Gráfico");
+        botaoCaracterizacao = criarBotaoAtalho("Caracterização\nde Componente");
         Button colarPlanilha = criarBotaoAtalho("Colar de\nPlanilha");
         Button importarCsv = criarBotaoAtalho("Importar\nCSV");
         Button digitarDados = criarBotaoAtalho("Digitar\nDados");
@@ -85,13 +90,15 @@ public final class MenuPrincipal {
         novoExperimento.setOnAction(evento -> acaoNovoExperimento.run());
         carregarExperimento.setOnAction(evento -> acaoCarregarExperimento.run());
         botaoNovoGrafico.setOnAction(evento -> acaoNovoGrafico.run());
+        botaoCaracterizacao.setOnAction(evento -> acaoCaracterizacao.run());
         colarPlanilha.setOnAction(evento -> acaoColarPlanilha.run());
         importarCsv.setOnAction(evento -> acaoImportarCsv.run());
         digitarDados.setOnAction(evento -> acaoDigitarDados.run());
         definirExperimentoAberto(false);
+        definirCaracterizacaoDisponivel(false);
 
         HBox faixa = new HBox(12, novoExperimento, carregarExperimento, botaoNovoGrafico,
-                colarPlanilha, importarCsv, digitarDados);
+                botaoCaracterizacao, colarPlanilha, importarCsv, digitarDados);
         faixa.setAlignment(Pos.CENTER_LEFT);
         faixa.setPadding(new Insets(14, 18, 14, 18));
         faixa.setStyle("-fx-background-color: #eaf1f8; -fx-border-color: #c5d3e0; "
@@ -102,6 +109,11 @@ public final class MenuPrincipal {
     public void definirExperimentoAberto(boolean aberto) {
         if (botaoNovoGrafico != null) botaoNovoGrafico.setDisable(!aberto);
         if (itemNovoGrafico != null) itemNovoGrafico.setDisable(!aberto);
+        if (!aberto) definirCaracterizacaoDisponivel(false);
+    }
+
+    public void definirCaracterizacaoDisponivel(boolean disponivel) {
+        if (botaoCaracterizacao != null) botaoCaracterizacao.setDisable(!disponivel);
     }
 
     private Button criarBotaoAtalho(String texto) {

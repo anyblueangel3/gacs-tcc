@@ -62,6 +62,11 @@ public final class GraficoCtlr {
         return graficoDAO.listarPorExperimento(idExperimento);
     }
 
+    /** Indica se o experimento possui ao menos uma curva persistida. */
+    public boolean possuiCurvas(Long idExperimento) throws SQLException {
+        return idExperimento != null && !curvaDAO.listarPorExperimento(idExperimento).isEmpty();
+    }
+
     public boolean podeAlterar(Long idExperimento) throws SQLException {
         if (Autorizador.usuarioAtualEhAdministrador()) return true;
         Long usuario = SessaoUsuario.exigirUsuarioLogado().getId();

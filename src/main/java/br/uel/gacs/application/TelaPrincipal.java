@@ -2,6 +2,7 @@ package br.uel.gacs.application;
 
 import br.uel.gacs.controller.ExperimentoCtlr;
 import br.uel.gacs.controller.ExperimentoCtlr.ExperimentoListado;
+import br.uel.gacs.controller.GraficoCtlr;
 import br.uel.gacs.model.Experimento;
 import br.uel.gacs.model.Usuario;
 import br.uel.gacs.util.LeitorCsv;
@@ -27,6 +28,7 @@ public final class TelaPrincipal {
     private final Window janela;
     private final Runnable acaoSair;
     private final ExperimentoCtlr controller = new ExperimentoCtlr();
+    private final GraficoCtlr graficoController = new GraficoCtlr();
     private final BorderPane raiz = new BorderPane();
     private MenuPrincipal menu;
     private PainelExperimento painelAtual;
@@ -41,7 +43,7 @@ public final class TelaPrincipal {
         menu=new MenuPrincipal(janela,acaoSair,()->new TelaCadastroUsuarios(janela).exibir(),
                 ()->iniciarNovo(null),this::exibirListaExperimentos,this::colarPlanilha,
                 this::importarCsv,
-                this::digitarDados, this::novoGrafico);
+                this::digitarDados, this::novoGrafico, this::caracterizarComponente);
         raiz.setTop(menu.criar()); raiz.setBottom(criarBarraEstado(usuario));
         raiz.setStyle("-fx-background-color: #f7f9fb;"); exibirListaExperimentos(); return raiz;
     }
@@ -99,6 +101,7 @@ public final class TelaPrincipal {
         menu.definirExperimentoAberto(true);
         painelAtual=new PainelExperimento(janela,controller,e,proprietario,planilha,this::exibirListaExperimentos);
         raiz.setCenter(painelAtual.criar());
+        atualizarDisponibilidadeCaracterizacao();
     }
 
     private void digitarDados() {
@@ -107,7 +110,24 @@ public final class TelaPrincipal {
     }
 
     private void novoGrafico() {
-        if (painelAtual != null) new TelaGraficos(janela, painelAtual.getIdExperimento()).exibir();
+        if (painelAtual != null) {
+            new TelaGraficos(janela, painelAtual.getIdExperimento()).exibir();
+            atualizarDisponibilidadeCaracterizacao();
+        }
+    }
+
+    private void caracterizarComponente() {
+        if (painelAtual != null && painelAtual.getIdExperimento() != null)
+            new TelaCaracterizacaoComponente(janela, painelAtual.getIdExperimento()).exibir();
+    }
+
+    private void atualizarDisponibilidadeCaracterizacao() {
+        Long idExperimento = painelAtual == null ? null : painelAtual.getIdExperimento();
+        try { menu.definirCaracterizacaoDisponivel(graficoController.possuiCurvas(idExperimento)); }
+        catch (SQLException e) {
+            menu.definirCaracterizacaoDisponivel(false);
+            erro("Não foi possível verificar as curvas disponíveis para caracterização.");
+        }
     }
 
     private void colarPlanilha() {
