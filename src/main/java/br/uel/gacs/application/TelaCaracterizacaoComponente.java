@@ -30,7 +30,7 @@ public final class TelaCaracterizacaoComponente {
                 "A caracterização utilizará as curvas cadastradas no experimento.");
         dialogo.getDialogPane().getButtonTypes().addAll(diodo, fet, ButtonType.CANCEL);
         dialogo.showAndWait().ifPresent(escolha -> {
-            if (escolha == diodo) informar("Caracterização de Diodo");
+            if (escolha == diodo) new TelaCaracterizacaoDiodo(janelaPai, idExperimento).exibir();
             else if (escolha == fet) informar("Caracterização de FET");
         });
     }
@@ -40,8 +40,7 @@ public final class TelaCaracterizacaoComponente {
         alerta.initOwner(janelaPai);
         alerta.setTitle("GACS");
         alerta.setHeaderText(tipo);
-        alerta.setContentText("Experimento selecionado: " + idExperimento
-                + "\n\nA seleção das curvas e os cálculos desta caracterização serão implementados no próximo incremento.");
+        alerta.setContentText("A caracterização de FET será implementada em um próximo incremento.");
         alerta.showAndWait();
     }
 }

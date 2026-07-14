@@ -2,8 +2,11 @@ br\uel\gacs\application\FluxoInicialAplicacao$2.class
 br\uel\gacs\application\TelaCadastroUsuarios.class
 br\uel\gacs\controller\GraficoCtlr$CurvaDoGrafico.class
 br\uel\gacs\dao\CurvaGraficoDAO$Op.class
+br\uel\gacs\controller\CaracterizacaoDiodoCtlr.class
 br\uel\gacs\dao\CriadorBancoDados.class
 br\uel\gacs\application\PainelExperimento.class
+br\uel\gacs\application\TelaCaracterizacaoDiodo.class
+br\uel\gacs\controller\CaracterizacaoDiodoCtlr$ResultadoDiodo.class
 br\uel\gacs\controller\GraficoCtlr.class
 br\uel\gacs\util\SenhaUtil.class
 br\uel\gacs\dao\CurvaDAO$Op.class
@@ -23,6 +26,7 @@ br\uel\gacs\dao\DadoColunaDAO$Op.class
 br\uel\gacs\controller\GraficoCtlr$Operacao.class
 br\uel\gacs\application\Autorizador.class
 br\uel\gacs\util\LeitorCsv.class
+br\uel\gacs\controller\CaracterizacaoDiodoCtlr$CurvaDisponivel.class
 br\uel\gacs\model\CurvaGrafico.class
 br\uel\gacs\application\TelaGraficos$1.class
 br\uel\gacs\dao\ColunaDAO$Op.class
@@ -30,6 +34,7 @@ br\uel\gacs\application\TelaNovoGrafico.class
 br\uel\gacs\application\TelaNovoGrafico$1.class
 br\uel\gacs\application\TelaCaracterizacaoComponente.class
 br\uel\gacs\dao\ColunaDAO.class
+br\uel\gacs\application\TelaCaracterizacaoDiodo$1.class
 br\uel\gacs\controller\GraficoCtlr$PontoGrafico.class
 br\uel\gacs\model\Grafico.class
 br\uel\gacs\dao\ExperimentoDAO.class
@@ -44,6 +49,7 @@ br\uel\gacs\controller\ExperimentoCtlr$ExperimentoListado.class
 br\uel\gacs\controller\GraficoCtlr$SerieDoGrafico.class
 br\uel\gacs\model\Experimento.class
 br\uel\gacs\util\FormatadorNumero.class
+br\uel\gacs\controller\CaracterizacaoDiodoCtlr$PontoDiodo.class
 br\uel\gacs\model\PerfilUsuario.class
 br\uel\gacs\dao\CurvaDAO.class
 br\uel\gacs\dao\UsuarioDAO.class
@@ -53,3 +59,4 @@ br\uel\gacs\application\TelaPlotagemGrafico$1.class
 br\uel\gacs\application\TelaGraficos.class
 br\uel\gacs\dao\GraficoDAO$Op.class
 br\uel\gacs\application\MenuPrincipal.class
+br\uel\gacs\controller\CaracterizacaoDiodoCtlr$Regressao.class
