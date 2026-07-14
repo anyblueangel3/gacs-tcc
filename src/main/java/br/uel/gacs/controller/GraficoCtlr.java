@@ -6,11 +6,13 @@ import br.uel.gacs.dao.ColunaDAO;
 import br.uel.gacs.dao.ConexaoBanco;
 import br.uel.gacs.dao.CurvaDAO;
 import br.uel.gacs.dao.CurvaGraficoDAO;
+import br.uel.gacs.dao.DadoColunaDAO;
 import br.uel.gacs.dao.GraficoDAO;
 import br.uel.gacs.dao.ExperimentoDAO;
 import br.uel.gacs.model.Coluna;
 import br.uel.gacs.model.Curva;
 import br.uel.gacs.model.CurvaGrafico;
+import br.uel.gacs.model.DadoColuna;
 import br.uel.gacs.model.Grafico;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -28,15 +30,18 @@ public final class GraficoCtlr {
     private final GraficoDAO graficoDAO;
     private final CurvaGraficoDAO curvaGraficoDAO;
     private final ExperimentoDAO experimentoDAO;
+    private final DadoColunaDAO dadoColunaDAO;
 
     public GraficoCtlr() {
-        this(new ColunaDAO(), new CurvaDAO(), new GraficoDAO(), new CurvaGraficoDAO(), new ExperimentoDAO());
+        this(new ColunaDAO(), new CurvaDAO(), new GraficoDAO(), new CurvaGraficoDAO(),
+                new ExperimentoDAO(), new DadoColunaDAO());
     }
 
     GraficoCtlr(ColunaDAO colunaDAO, CurvaDAO curvaDAO, GraficoDAO graficoDAO,
-                CurvaGraficoDAO curvaGraficoDAO, ExperimentoDAO experimentoDAO) {
+                CurvaGraficoDAO curvaGraficoDAO, ExperimentoDAO experimentoDAO,
+                DadoColunaDAO dadoColunaDAO) {
         if (colunaDAO == null || curvaDAO == null || graficoDAO == null || curvaGraficoDAO == null
-                || experimentoDAO == null) {
+                || experimentoDAO == null || dadoColunaDAO == null) {
             throw new IllegalArgumentException("Os DAOs de gráfico devem ser informados.");
         }
         this.colunaDAO = colunaDAO;
@@ -44,6 +49,7 @@ public final class GraficoCtlr {
         this.graficoDAO = graficoDAO;
         this.curvaGraficoDAO = curvaGraficoDAO;
         this.experimentoDAO = experimentoDAO;
+        this.dadoColunaDAO = dadoColunaDAO;
     }
 
     public List<Coluna> listarColunas(Long idExperimento) throws SQLException {
@@ -75,6 +81,33 @@ public final class GraficoCtlr {
                     colunas.get(curva.getIdColunaX()), colunas.get(curva.getIdColunaY())));
         }
         return List.copyOf(resultado);
+    }
+
+    /** Carrega os pontos de todas as curvas, associando X e Y pelo número da medida. */
+    public List<SerieDoGrafico> carregarSeries(Grafico grafico) throws SQLException {
+        if (grafico == null || grafico.getId() == null) {
+            throw new IllegalArgumentException("Selecione um gráfico para plotar.");
+        }
+        java.util.ArrayList<SerieDoGrafico> series = new java.util.ArrayList<>();
+        for (CurvaDoGrafico item : listarCurvas(grafico)) {
+            if (item.colunaX() == null || item.colunaY() == null) {
+                throw new SQLException("Uma das colunas da curva não foi encontrada.");
+            }
+            Map<Integer, Double> valoresX = new java.util.HashMap<>();
+            for (DadoColuna dado : dadoColunaDAO.listarPorColuna(item.colunaX().getId())) {
+                valoresX.put(dado.getNumeroDaMedida(), dado.getValorMedida());
+            }
+            java.util.ArrayList<PontoGrafico> pontos = new java.util.ArrayList<>();
+            for (DadoColuna dadoY : dadoColunaDAO.listarPorColuna(item.colunaY().getId())) {
+                Double x = valoresX.get(dadoY.getNumeroDaMedida());
+                if (x != null && Double.isFinite(x) && Double.isFinite(dadoY.getValorMedida())) {
+                    pontos.add(new PontoGrafico(x, dadoY.getValorMedida()));
+                }
+            }
+            series.add(new SerieDoGrafico(item.numero(), item.curva().getNome(),
+                    item.colunaX().getNomeColuna(), item.colunaY().getNomeColuna(), List.copyOf(pontos)));
+        }
+        return List.copyOf(series);
     }
 
     /** Cria o gráfico, sua primeira curva e a associação entre ambos atomicamente. */
@@ -214,5 +247,8 @@ public final class GraficoCtlr {
     }
 
     public record CurvaDoGrafico(Integer numero, Curva curva, Coluna colunaX, Coluna colunaY) { }
+    public record PontoGrafico(double x, double y) { }
+    public record SerieDoGrafico(Integer numero, String nome, String nomeEixoX,
+                                 String nomeEixoY, List<PontoGrafico> pontos) { }
     @FunctionalInterface private interface Operacao { void executar(Connection conexao) throws SQLException; }
 }

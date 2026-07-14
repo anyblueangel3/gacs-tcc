@@ -8,6 +8,7 @@ br\uel\gacs\controller\GraficoCtlr.class
 br\uel\gacs\util\SenhaUtil.class
 br\uel\gacs\dao\CurvaDAO$Op.class
 br\uel\gacs\application\PlanilhaExperimento.class
+br\uel\gacs\application\TelaPlotagemGrafico.class
 br\uel\gacs\App.class
 br\uel\gacs\application\PainelExperimento$CelulaNumerica.class
 br\uel\gacs\dao\GraficoDAO.class
@@ -28,6 +29,7 @@ br\uel\gacs\dao\ColunaDAO$Op.class
 br\uel\gacs\application\TelaNovoGrafico.class
 br\uel\gacs\application\TelaNovoGrafico$1.class
 br\uel\gacs\dao\ColunaDAO.class
+br\uel\gacs\controller\GraficoCtlr$PontoGrafico.class
 br\uel\gacs\model\Grafico.class
 br\uel\gacs\dao\ExperimentoDAO.class
 br\uel\gacs\application\TelaPrincipal.class
@@ -38,6 +40,7 @@ br\uel\gacs\application\TelaCadastroUsuarios$FormularioUsuario.class
 br\uel\gacs\dao\CurvaGraficoDAO.class
 br\uel\gacs\application\FluxoInicialAplicacao.class
 br\uel\gacs\controller\ExperimentoCtlr$ExperimentoListado.class
+br\uel\gacs\controller\GraficoCtlr$SerieDoGrafico.class
 br\uel\gacs\model\Experimento.class
 br\uel\gacs\util\FormatadorNumero.class
 br\uel\gacs\model\PerfilUsuario.class
@@ -45,6 +48,7 @@ br\uel\gacs\dao\CurvaDAO.class
 br\uel\gacs\dao\UsuarioDAO.class
 br\uel\gacs\model\Coluna.class
 br\uel\gacs\controller\LoginCtlr.class
+br\uel\gacs\application\TelaPlotagemGrafico$1.class
 br\uel\gacs\application\TelaGraficos.class
 br\uel\gacs\dao\GraficoDAO$Op.class
 br\uel\gacs\application\MenuPrincipal.class

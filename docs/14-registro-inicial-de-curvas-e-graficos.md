@@ -1,4 +1,4 @@
-# 14 — Registro inicial de curvas e gráficos
+# 14 — Registro de curvas, gráficos e plotagem
 
 ## 1. Identificação
 
@@ -16,11 +16,18 @@ Experimento salvo
 → criação da curva
 → criação do gráfico
 → associação da curva ao gráfico
+→ consulta e manutenção das curvas do gráfico
+→ plotagem das curvas persistidas
+→ exportação ou impressão do resultado
 ```
 
 O comando `Novo Gráfico`, antes provisório, foi ligado ao processo real de
 persistência. Ele permanece disponível apenas quando existe um experimento
 aberto.
+
+Ao longo do sprint, o escopo inicialmente previsto foi ampliado. Além do
+registro da primeira curva, foram implementados a consulta e o CRUD de gráficos
+e curvas, bem como a representação visual dos dados persistidos.
 
 ## 3. Fluxo implementado
 
@@ -64,13 +71,62 @@ O controller verifica:
 - pertencimento das duas colunas ao experimento aberto;
 - existência efetiva das colunas no banco no momento da transação.
 
-## 6. Classes incluídas e alteradas
+## 6. Consulta e manutenção de gráficos e curvas
+
+Foi criada a tela `Gráficos e curvas`, acessível a partir do experimento
+aberto. Essa tela apresenta os gráficos pertencentes ao experimento e as curvas
+associadas ao gráfico selecionado.
+
+O fluxo permite:
+
+- listar os gráficos salvos do experimento;
+- selecionar um gráfico e consultar as curvas que o compõem;
+- criar gráficos com sua primeira curva;
+- incluir outras curvas em um gráfico existente;
+- alterar os dados cadastrais do gráfico e das curvas;
+- excluir curvas e gráficos, respeitando suas associações;
+- conservar a ordem das curvas dentro de cada gráfico.
+
+Com isso, tornou-se possível conferir visualmente se o registro foi realizado
+de maneira adequada e manter um gráfico composto por diversas curvas.
+
+## 7. Plotagem do gráfico
+
+Foi acrescentado o comando `Plotar gráfico` na tela `Gráficos e curvas`. O
+comando atua sobre o gráfico selecionado e abre uma janela própria de
+pré-visualização.
+
+A plotagem utiliza os registros persistidos de `Curva`, `Coluna` e
+`DadoColuna`. Para cada curva, os valores das colunas X e Y são associados pelo
+`numeroDaMedida`. Quando uma medida não possui o par correspondente no outro
+eixo, ela não é incluída na série, evitando a ligação de pontos incompatíveis.
+
+Foram implementados:
+
+- exibição de várias curvas no mesmo gráfico;
+- legenda com identificação das curvas;
+- apresentação dos valores dos eixos em notação científica;
+- mensagem informativa quando não existem pares X/Y disponíveis;
+- pré-visualização em proporção compatível com uma folha A4 horizontal;
+- gravação do resultado em arquivo PNG;
+- impressão em A4 por meio do diálogo de impressão do sistema operacional.
+
+O formato PNG foi adotado para a exportação porque preserva linhas finas,
+textos, eixos e marcadores sem os artefatos de compressão característicos do
+JPEG, sendo mais apropriado para gráficos técnicos.
+
+Para permitir a conversão do gráfico JavaFX em imagem PNG, foi adicionada ao
+Maven a dependência `javafx-swing`, utilizada pela classe `SwingFXUtils`.
+
+## 8. Classes incluídas e alteradas
 
 Foram incluídas:
 
 ```text
 controller/GraficoCtlr.java
 application/TelaNovoGrafico.java
+application/TelaGraficos.java
+application/TelaPlotagemGrafico.java
 ```
 
 Foram integradas ao novo fluxo:
@@ -79,12 +135,52 @@ Foram integradas ao novo fluxo:
 application/MenuPrincipal.java
 application/TelaPrincipal.java
 application/PainelExperimento.java
+dao/CurvaGraficoDAO.java
+pom.xml
 ```
 
-## 7. Limite consciente deste incremento
+## 9. Verificação realizada
 
-Este sprint implementa o registro inicial de um gráfico com sua primeira curva.
-A representação visual dos pontos, a inclusão posterior de outras curvas no
-mesmo gráfico, a lista de gráficos salvos e a reabertura para edição ficam para
-os próximos incrementos. O modelo persistido já suporta essas evoluções sem
-criação de novas tabelas.
+Após a inclusão da dependência necessária à exportação da imagem, o projeto foi
+compilado e executado com sucesso no ambiente de desenvolvimento oficial:
+
+```text
+Java 21
+JavaFX
+Maven
+MySQL 8.0.28
+```
+
+Foram verificados o acesso à tela de gráficos, a manutenção das curvas, a
+plotagem e o funcionamento geral do sistema. Ao final do sprint, o aplicativo
+estava compilando e executando corretamente.
+
+## 10. Ajustes previstos para o próximo sprint
+
+No próximo sprint serão revistos alguns comportamentos da interface que, embora
+não impeçam o funcionamento atual, deverão operar de forma um pouco diferente
+para tornar o uso mais natural e coerente.
+
+Esses ajustes serão definidos a partir de novos testes práticos e poderão
+envolver fluxo entre telas, seleção de gráficos e curvas, habilitação de botões,
+mensagens, foco, atualização das listas e outros detalhes de experiência de
+uso identificados durante a operação.
+
+As alterações deverão preservar:
+
+- os dados já persistidos;
+- o relacionamento de um gráfico com várias curvas;
+- o padrão transacional com `commit` integral ou `rollback` em caso de falha;
+- a plotagem, a exportação em PNG e a impressão em A4 já implementadas;
+- as funcionalidades anteriores do GACS.
+
+## 11. Estado ao final do dia
+
+O GACS encerra o dia com o ciclo básico de gráficos funcional: registra o
+gráfico e suas curvas, permite consultar e manter essas associações, recupera os
+dados experimentais persistidos, plota uma ou várias curvas, salva o resultado
+em PNG e oferece impressão em folha A4 horizontal.
+
+Os próximos trabalhos concentram-se no refinamento dos comportamentos da
+interface e, posteriormente, na evolução dos recursos de análise e
+caracterização das curvas.

@@ -43,6 +43,7 @@ public final class TelaGraficos {
         Button novoGrafico = new Button("Novo gráfico");
         Button renomearGrafico = new Button("Renomear");
         Button excluirGrafico = new Button("Excluir gráfico");
+        Button plotarGrafico = new Button("Plotar gráfico");
         Button adicionarCurva = new Button("Adicionar curva");
         Button alterarCurva = new Button("Alterar curva");
         Button removerCurva = new Button("Remover curva");
@@ -55,6 +56,7 @@ public final class TelaGraficos {
         novoGrafico.setDisable(!podeAlterar);
         renomearGrafico.disableProperty().bind(tabelaGraficos.getSelectionModel().selectedItemProperty().isNull().or(new javafx.beans.property.SimpleBooleanProperty(!podeAlterar)));
         excluirGrafico.disableProperty().bind(tabelaGraficos.getSelectionModel().selectedItemProperty().isNull().or(new javafx.beans.property.SimpleBooleanProperty(!podeAlterar)));
+        plotarGrafico.disableProperty().bind(tabelaGraficos.getSelectionModel().selectedItemProperty().isNull());
         adicionarCurva.disableProperty().bind(tabelaGraficos.getSelectionModel().selectedItemProperty().isNull().or(new javafx.beans.property.SimpleBooleanProperty(!podeAlterar)));
         alterarCurva.disableProperty().bind(tabelaCurvas.getSelectionModel().selectedItemProperty().isNull().or(new javafx.beans.property.SimpleBooleanProperty(!podeAlterar)));
         removerCurva.disableProperty().bind(tabelaCurvas.getSelectionModel().selectedItemProperty().isNull().or(new javafx.beans.property.SimpleBooleanProperty(!podeAlterar)));
@@ -62,12 +64,14 @@ public final class TelaGraficos {
         novoGrafico.setOnAction(e -> { if (new TelaNovoGrafico(janela, idExperimento).exibir()) carregarGraficos(); });
         renomearGrafico.setOnAction(e -> renomearGrafico());
         excluirGrafico.setOnAction(e -> excluirGrafico());
+        plotarGrafico.setOnAction(e -> plotarGrafico());
         adicionarCurva.setOnAction(e -> editarCurva(null));
         alterarCurva.setOnAction(e -> editarCurva(tabelaCurvas.getSelectionModel().getSelectedItem()));
         removerCurva.setOnAction(e -> removerCurva());
         fechar.setOnAction(e -> janela.close());
 
-        VBox ladoGraficos = painel("Gráficos", tabelaGraficos, new HBox(8, novoGrafico, renomearGrafico, excluirGrafico));
+        VBox ladoGraficos = painel("Gráficos", tabelaGraficos,
+                new HBox(8, novoGrafico, renomearGrafico, excluirGrafico, plotarGrafico));
         VBox ladoCurvas = painel("Curvas do gráfico selecionado", tabelaCurvas,
                 new HBox(8, adicionarCurva, alterarCurva, removerCurva));
         SplitPane divisao = new SplitPane(ladoGraficos, ladoCurvas); divisao.setDividerPositions(0.36);
@@ -129,6 +133,11 @@ public final class TelaGraficos {
         if (!confirmar("Excluir o gráfico \""+grafico.getNome()+"\" e suas associações de curvas?")) return;
         try { controller.excluirGrafico(grafico); carregarGraficos(); }
         catch (SQLException e) { erro("Não foi possível excluir o gráfico."); }
+    }
+
+    private void plotarGrafico() {
+        Grafico grafico = tabelaGraficos.getSelectionModel().getSelectedItem();
+        if (grafico != null) new TelaPlotagemGrafico(tabelaGraficos.getScene().getWindow(), grafico).exibir();
     }
 
     private void editarCurva(CurvaDoGrafico existente) {
