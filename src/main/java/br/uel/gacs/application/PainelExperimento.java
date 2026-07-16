@@ -95,6 +95,7 @@ public final class PainelExperimento {
         tabela.getSelectionModel().setCellSelectionEnabled(true);
         tabela.setPlaceholder(new Label("A planilha do experimento está vazia."));
         atualizarLinhas(tabela);
+        adicionarColunaNumeroLinha(tabela);
         for (int i=0;i<planilha.getQuantidadeColunas();i++) {
             adicionarColunaVisual(tabela, i);
         }
@@ -108,6 +109,7 @@ public final class PainelExperimento {
     private HBox criarFerramentasPlanilha(TableView<Integer> tabela) {
         Button adicionarLinha = new Button("Adicionar linha");
         Button adicionarColuna = new Button("Adicionar coluna");
+        Button excluirLinha = new Button("Excluir linha");
         Button excluirColuna = new Button("Excluir coluna");
 
         adicionarLinha.setOnAction(e -> {
@@ -117,8 +119,33 @@ public final class PainelExperimento {
         adicionarColuna.setOnAction(e -> {
             adicionarColunaParaDigitacao();
         });
+        excluirLinha.setOnAction(e -> excluirLinhaSelecionada(tabela));
         excluirColuna.setOnAction(e -> excluirColunaSelecionada(tabela));
-        return new HBox(8, adicionarLinha, adicionarColuna, excluirColuna);
+        return new HBox(8, adicionarLinha, adicionarColuna, excluirLinha, excluirColuna);
+    }
+
+    private void excluirLinhaSelecionada(TableView<Integer> tabela) {
+        TablePosition<Integer, ?> selecionada = celulaSelecionada(tabela);
+        if (selecionada == null || selecionada.getRow() < 0) {
+            erro("Selecione uma célula da linha que deseja excluir.");
+            return;
+        }
+        int indiceLinha = selecionada.getRow();
+        int numeroLinha = indiceLinha + 1;
+        Alert confirmacao = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmacao.initOwner(janela);
+        confirmacao.setTitle("Excluir linha");
+        confirmacao.setHeaderText("Excluir a linha " + numeroLinha + "?");
+        confirmacao.setContentText("Todos os valores desta linha serão excluídos. As linhas seguintes serão renumeradas em sequência, e a alteração será persistida ao salvar o experimento.");
+        if (confirmacao.showAndWait().filter(ButtonType.OK::equals).isEmpty()) return;
+
+        planilha.removerMedida(indiceLinha);
+        atualizarLinhas(tabela);
+        acaoMarcarAlterado.run();
+        if (!tabela.getItems().isEmpty() && planilha.getQuantidadeColunas() > 0) {
+            int proximaLinha = Math.min(indiceLinha, tabela.getItems().size() - 1);
+            Platform.runLater(() -> selecionarEEditar(tabela, proximaLinha, 0));
+        }
     }
 
     private void excluirColunaSelecionada(TableView<Integer> tabela) {
@@ -131,7 +158,11 @@ public final class PainelExperimento {
             erro("Selecione uma célula da coluna que deseja excluir.");
             return;
         }
-        int indice = selecionada.getColumn();
+        int indice = indiceColunaPlanilha(selecionada);
+        if (indice < 0) {
+            erro("Selecione uma célula da coluna experimental que deseja excluir.");
+            return;
+        }
         String rotulo = planilha.getRotuloColuna(indice);
         Alert confirmacao = new Alert(Alert.AlertType.CONFIRMATION);
         confirmacao.initOwner(janela);
@@ -175,8 +206,22 @@ public final class PainelExperimento {
 
     private void reconstruirColunas(TableView<Integer> tabela) {
         tabela.getColumns().clear();
+        adicionarColunaNumeroLinha(tabela);
         for (int i=0;i<planilha.getQuantidadeColunas();i++) adicionarColunaVisual(tabela,i);
         atualizarLinhas(tabela);
+    }
+
+    private void adicionarColunaNumeroLinha(TableView<Integer> tabela) {
+        TableColumn<Integer, Integer> numeroLinha = new TableColumn<>("Linha");
+        numeroLinha.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue() + 1));
+        numeroLinha.setEditable(false);
+        numeroLinha.setReorderable(false);
+        numeroLinha.setSortable(false);
+        numeroLinha.setMinWidth(65);
+        numeroLinha.setPrefWidth(65);
+        numeroLinha.setMaxWidth(65);
+        numeroLinha.setStyle("-fx-alignment: CENTER;");
+        tabela.getColumns().add(numeroLinha);
     }
 
     private void adicionarColunaVisual(TableView<Integer> tabela, int indice) {
@@ -186,7 +231,7 @@ public final class PainelExperimento {
         coluna.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(planilha.getValor(c.getValue(),indice)));
         coluna.setCellFactory(c -> new CelulaNumerica(tabela,indice));
         coluna.setPrefWidth(150);
-        tabela.getColumns().add(coluna);
+        tabela.getColumns().add(indice + 1, coluna);
     }
 
     private void atualizarLinhas(TableView<Integer> tabela) {
@@ -226,24 +271,31 @@ public final class PainelExperimento {
         tabela.addEventFilter(KeyEvent.KEY_PRESSED,e->{
             if(e.getTarget() instanceof TextInputControl)return;
             TablePosition<Integer,?> p=celulaSelecionada(tabela); if(p==null)return;
-            if(e.getCode()==KeyCode.DELETE&&tabela.getEditingCell()==null){planilha.setValor(p.getRow(),p.getColumn(),null);acaoMarcarAlterado.run();tabela.refresh();e.consume();}
-            else if(e.getCode()==KeyCode.ENTER&&tabela.getEditingCell()==null){selecionarEEditar(tabela,p.getRow(),p.getColumn());e.consume();}
+            int coluna=indiceColunaPlanilha(p); if(coluna<0)return;
+            if(e.getCode()==KeyCode.DELETE&&tabela.getEditingCell()==null){planilha.setValor(p.getRow(),coluna,null);acaoMarcarAlterado.run();tabela.refresh();e.consume();}
+            else if(e.getCode()==KeyCode.ENTER&&tabela.getEditingCell()==null){selecionarEEditar(tabela,p.getRow(),coluna);e.consume();}
         });
         tabela.addEventFilter(KeyEvent.KEY_TYPED,e->{
             if(e.getTarget() instanceof TextInputControl)return;
             if(tabela.getEditingCell()!=null||e.isControlDown()||e.isAltDown()||e.isMetaDown())return;
             String c=e.getCharacter(); if(c==null||c.isBlank()||"\r\n\t".contains(c))return;
             TablePosition<Integer,?> p=celulaSelecionada(tabela); if(p==null)return;
-            textoInicialEdicao=c; selecionarEEditar(tabela,p.getRow(),p.getColumn()); e.consume();
+            int coluna=indiceColunaPlanilha(p); if(coluna<0)return;
+            textoInicialEdicao=c; selecionarEEditar(tabela,p.getRow(),coluna); e.consume();
         });
     }
 
     private TablePosition<Integer,?> celulaSelecionada(TableView<Integer> tabela){return tabela.getSelectionModel().getSelectedCells().stream().findFirst().orElse(null);}
 
+    private int indiceColunaPlanilha(TablePosition<Integer,?> posicao) {
+        return posicao.getColumn() - 1;
+    }
+
     private void selecionarEEditar(TableView<Integer> tabela,int linha,int coluna){
-        if(linha<0||coluna<0||coluna>=tabela.getColumns().size())return;
+        if(linha<0||coluna<0||coluna>=planilha.getQuantidadeColunas())return;
         if(linha>=planilha.getQuantidadeMedidas()){try{planilha.adicionarMedidaVazia();atualizarLinhas(tabela);}catch(RuntimeException e){erro(e.getMessage());return;}}
-        tabela.getSelectionModel().clearAndSelect(linha,tabela.getColumns().get(coluna));tabela.edit(linha,tabela.getColumns().get(coluna));
+        TableColumn<Integer,?> colunaVisual=tabela.getColumns().get(coluna+1);
+        tabela.getSelectionModel().clearAndSelect(linha,colunaVisual);tabela.edit(linha,colunaVisual);
     }
 
     private void moverDepoisDaEdicao(TableView<Integer> tabela,int linha,int coluna,KeyEvent evento){
