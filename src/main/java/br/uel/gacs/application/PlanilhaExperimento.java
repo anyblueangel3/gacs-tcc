@@ -205,6 +205,35 @@ public final class PlanilhaExperimento {
         medidas.remove(linha);
     }
 
+    /**
+     * Exclui uma célula da sequência de uma coluna. Os valores inferiores da
+     * mesma coluna sobem uma posição e a última célula fica vazia. As demais
+     * colunas e a quantidade total de linhas não são alteradas.
+     */
+    public void removerCelulaDeslocandoParaCima(int linha, int coluna) {
+        validarCelula(linha, coluna);
+        for (int atual = linha; atual < medidas.size() - 1; atual++) {
+            medidas.get(atual).set(coluna, medidas.get(atual + 1).get(coluna));
+        }
+        medidas.getLast().set(coluna, null);
+    }
+
+    /**
+     * Insere uma célula vazia na sequência de uma coluna. Os valores a partir
+     * da posição selecionada descem uma linha. Uma nova linha vazia é criada
+     * no final para que nenhum valor seja perdido; as demais colunas não são
+     * deslocadas.
+     */
+    public void inserirCelulaDeslocandoParaBaixo(int linha, int coluna) {
+        validarCelula(linha, coluna);
+        exigirEspacoParaMedida();
+        medidas.add(new ArrayList<>(Collections.nCopies(nomesColunas.size(), null)));
+        for (int atual = medidas.size() - 1; atual > linha; atual--) {
+            medidas.get(atual).set(coluna, medidas.get(atual - 1).get(coluna));
+        }
+        medidas.get(linha).set(coluna, null);
+    }
+
     /** Indica se todas as células existentes estão preenchidas com números. */
     public boolean estaCompleta() {
         return medidas.stream().flatMap(List::stream).allMatch(valor -> valor != null);

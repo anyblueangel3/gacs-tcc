@@ -109,6 +109,8 @@ public final class PainelExperimento {
     private HBox criarFerramentasPlanilha(TableView<Integer> tabela) {
         Button adicionarLinha = new Button("Adicionar linha");
         Button adicionarColuna = new Button("Adicionar coluna");
+        Button inserirCelula = new Button("Inserir célula");
+        Button excluirCelula = new Button("Excluir célula");
         Button excluirLinha = new Button("Excluir linha");
         Button excluirColuna = new Button("Excluir coluna");
 
@@ -119,9 +121,61 @@ public final class PainelExperimento {
         adicionarColuna.setOnAction(e -> {
             adicionarColunaParaDigitacao();
         });
+        inserirCelula.setOnAction(e -> inserirCelulaSelecionada(tabela));
+        excluirCelula.setOnAction(e -> excluirCelulaSelecionada(tabela));
         excluirLinha.setOnAction(e -> excluirLinhaSelecionada(tabela));
         excluirColuna.setOnAction(e -> excluirColunaSelecionada(tabela));
-        return new HBox(8, adicionarLinha, adicionarColuna, excluirLinha, excluirColuna);
+        return new HBox(8, adicionarLinha, adicionarColuna, inserirCelula,
+                excluirCelula, excluirLinha, excluirColuna);
+    }
+
+    private void inserirCelulaSelecionada(TableView<Integer> tabela) {
+        TablePosition<Integer, ?> selecionada = celulaSelecionada(tabela);
+        if (selecionada == null || selecionada.getRow() < 0) {
+            erro("Selecione a posição em que deseja inserir a célula.");
+            return;
+        }
+        int coluna = indiceColunaPlanilha(selecionada);
+        if (coluna < 0) {
+            erro("Selecione uma célula de dados, e não a numeração das linhas.");
+            return;
+        }
+        int linha = selecionada.getRow();
+        try {
+            planilha.inserirCelulaDeslocandoParaBaixo(linha, coluna);
+            atualizarLinhas(tabela);
+            acaoMarcarAlterado.run();
+            tabela.refresh();
+            Platform.runLater(() -> selecionarEEditar(tabela, linha, coluna));
+        } catch (IllegalArgumentException | IllegalStateException x) {
+            erro(x.getMessage());
+        }
+    }
+
+    private void excluirCelulaSelecionada(TableView<Integer> tabela) {
+        TablePosition<Integer, ?> selecionada = celulaSelecionada(tabela);
+        if (selecionada == null || selecionada.getRow() < 0) {
+            erro("Selecione a célula que deseja excluir.");
+            return;
+        }
+        int coluna = indiceColunaPlanilha(selecionada);
+        if (coluna < 0) {
+            erro("A numeração das linhas não é uma célula de dados e não pode ser excluída.");
+            return;
+        }
+        int linha = selecionada.getRow();
+        Alert confirmacao = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmacao.initOwner(janela);
+        confirmacao.setTitle("Excluir célula");
+        confirmacao.setHeaderText("Excluir a célula da linha " + (linha + 1)
+                + ", coluna " + planilha.getRotuloColuna(coluna) + "?");
+        confirmacao.setContentText("Os valores abaixo subirão uma linha somente nesta coluna. "
+                + "As demais colunas não serão movimentadas e a última célula ficará vazia.");
+        if (confirmacao.showAndWait().filter(ButtonType.OK::equals).isEmpty()) return;
+
+        planilha.removerCelulaDeslocandoParaCima(linha, coluna);
+        acaoMarcarAlterado.run();
+        tabela.refresh();
     }
 
     private void excluirLinhaSelecionada(TableView<Integer> tabela) {
@@ -272,7 +326,7 @@ public final class PainelExperimento {
             if(e.getTarget() instanceof TextInputControl)return;
             TablePosition<Integer,?> p=celulaSelecionada(tabela); if(p==null)return;
             int coluna=indiceColunaPlanilha(p); if(coluna<0)return;
-            if(e.getCode()==KeyCode.DELETE&&tabela.getEditingCell()==null){planilha.setValor(p.getRow(),coluna,null);acaoMarcarAlterado.run();tabela.refresh();e.consume();}
+            if(e.getCode()==KeyCode.DELETE&&tabela.getEditingCell()==null){excluirCelulaSelecionada(tabela);e.consume();}
             else if(e.getCode()==KeyCode.ENTER&&tabela.getEditingCell()==null){selecionarEEditar(tabela,p.getRow(),coluna);e.consume();}
         });
         tabela.addEventFilter(KeyEvent.KEY_TYPED,e->{
