@@ -20,6 +20,7 @@ import java.util.Map;
 public final class CaracterizacaoDiodoCtlr {
     private static final double CONSTANTE_BOLTZMANN = 1.380649E-23;
     private static final double CARGA_ELEMENTAR = 1.602176634E-19;
+    private static final double FRACAO_INICIO_JOELHO = 0.10;
 
     private final CurvaDAO curvaDAO;
     private final ColunaDAO colunaDAO;
@@ -62,6 +63,8 @@ public final class CaracterizacaoDiodoCtlr {
                                         double tensaoMinima, double tensaoMaxima,
                                         double tensaoRetificacao,
                                         double correnteReferenciaRuptura,
+                                        double tensaoMinimaFuga,
+                                        double tensaoMaximaFuga,
                                         double correnteMinimaRs,
                                         double correnteMaximaRs) throws SQLException {
         if (direta == null) throw new IllegalArgumentException("Selecione a curva direta.");
@@ -76,6 +79,9 @@ public final class CaracterizacaoDiodoCtlr {
             throw new IllegalArgumentException("A tensão da razão de retificação deve ser positiva.");
         if (reversa != null && (!Double.isFinite(correnteReferenciaRuptura) || correnteReferenciaRuptura <= 0))
             throw new IllegalArgumentException("A corrente de referência da ruptura deve ser positiva.");
+        if (reversa != null && (!Double.isFinite(tensaoMinimaFuga) || !Double.isFinite(tensaoMaximaFuga)
+                || tensaoMinimaFuga < 0 || tensaoMinimaFuga >= tensaoMaximaFuga))
+            throw new IllegalArgumentException("Informe um intervalo válido para o módulo da tensão de fuga.");
         if (!Double.isFinite(correnteMinimaRs) || !Double.isFinite(correnteMaximaRs)
                 || correnteMinimaRs <= 0 || correnteMinimaRs >= correnteMaximaRs)
             throw new IllegalArgumentException("Informe um intervalo de corrente válido para a resistência em série.");
@@ -106,7 +112,16 @@ public final class CaracterizacaoDiodoCtlr {
         Double correnteReversaMaxima = null;
         Double razaoRetificacao = null;
         Double tensaoRuptura = null;
+        Double correnteFugaMedia = null;
+        Double correnteFugaMaxima = null;
+        Double tensaoInicioJoelho = null;
+        Double larguraJoelho = null;
+        Double inclinacaoPosRuptura = null;
+        Double resistenciaDinamicaPosRuptura = null;
+        Double rQuadradoPosRuptura = null;
         int pontosReversos = 0;
+        int pontosFuga = 0;
+        int pontosPosRuptura = 0;
         if (reversa != null) {
             List<PontoDiodo> dadosReversos = carregarPontos(reversa.curva()).stream()
                     .filter(p -> p.tensao() < 0 && p.corrente() < 0).toList();
@@ -116,6 +131,28 @@ public final class CaracterizacaoDiodoCtlr {
             correnteReversaMedia = dadosReversos.stream().mapToDouble(p -> Math.abs(p.corrente())).average().orElseThrow();
             correnteReversaMaxima = dadosReversos.stream().mapToDouble(p -> Math.abs(p.corrente())).max().orElseThrow();
             tensaoRuptura = interpolarTensaoRuptura(dadosReversos, correnteReferenciaRuptura);
+            Double inicioJoelho = interpolarTensaoRuptura(dadosReversos,
+                    correnteReferenciaRuptura * FRACAO_INICIO_JOELHO);
+            tensaoInicioJoelho = inicioJoelho;
+            List<PontoDiodo> dadosFuga = dadosReversos.stream()
+                    .filter(p -> entre(Math.abs(p.tensao()), tensaoMinimaFuga, tensaoMaximaFuga))
+                    .toList();
+            pontosFuga = dadosFuga.size();
+            if (!dadosFuga.isEmpty()) {
+                correnteFugaMedia = dadosFuga.stream()
+                        .mapToDouble(p -> Math.abs(p.corrente())).average().orElseThrow();
+                correnteFugaMaxima = dadosFuga.stream()
+                        .mapToDouble(p -> Math.abs(p.corrente())).max().orElseThrow();
+            }
+            if (tensaoRuptura != null && tensaoInicioJoelho != null)
+                larguraJoelho = Math.max(0, tensaoRuptura - tensaoInicioJoelho);
+
+            AnalisePosRuptura posRuptura = analisarPosRuptura(dadosReversos,
+                    correnteReferenciaRuptura, tensaoRuptura);
+            inclinacaoPosRuptura = posRuptura.inclinacao();
+            resistenciaDinamicaPosRuptura = posRuptura.resistenciaDinamica();
+            rQuadradoPosRuptura = posRuptura.rQuadrado();
+            pontosPosRuptura = posRuptura.quantidadePontos();
             Double correnteDiretaNaTensao = interpolarCorrentePorTensao(pontosDiretos, tensaoRetificacao);
             Double correnteReversaNaTensao = interpolarCorrentePorTensao(dadosReversos, -tensaoRetificacao);
             if (correnteDiretaNaTensao != null && correnteReversaNaTensao != null
@@ -126,10 +163,15 @@ public final class CaracterizacaoDiodoCtlr {
 
         return new ResultadoDiodo(quantidadePontosDiretos, ajuste.size(), pontosReversos,
                 tensaoMinima, tensaoMaxima, temperatura, correnteReferencia, tensaoRetificacao,
-                correnteReferenciaRuptura, correnteMinimaRs, correnteMaximaRs,
+                correnteReferenciaRuptura, tensaoMinimaFuga, tensaoMaximaFuga,
+                correnteMinimaRs, correnteMaximaRs,
                 tensaoDireta, correnteSaturacao, fatorIdealidade, resistenciaDinamica,
                 regressao.rQuadrado(), correnteReversaMedia, correnteReversaMaxima,
-                razaoRetificacao, tensaoRuptura, estimativaRs.valor(), estimativaRs.quantidadePontos());
+                correnteFugaMedia, correnteFugaMaxima, pontosFuga,
+                razaoRetificacao, tensaoRuptura, tensaoInicioJoelho, larguraJoelho,
+                inclinacaoPosRuptura, resistenciaDinamicaPosRuptura,
+                rQuadradoPosRuptura, pontosPosRuptura,
+                estimativaRs.valor(), estimativaRs.quantidadePontos());
     }
 
     public String gerarRelatorio(Experimento experimento, CurvaDisponivel direta,
@@ -138,7 +180,7 @@ public final class CaracterizacaoDiodoCtlr {
         texto.append("RELATÓRIO DE CARACTERIZAÇÃO DE DIODO\n\n")
                 .append("Experimento: ").append(experimento.getNomeExperimento()).append('\n')
                 .append("Curva direta: ").append(direta.curva().getNome()).append('\n')
-                .append("Curva reversa: ").append(reversa == null ? "não informada" : reversa.curva().getNome()).append('\n')
+                .append("Curva reversa/ruptura: ").append(reversa == null ? "não informada" : reversa.curva().getNome()).append('\n')
                 .append("Temperatura considerada: ").append(formatar(r.temperatura())).append(" K\n\n")
                 .append("DADOS E INTERVALO DE ANÁLISE\n")
                 .append("Pontos da curva direta: ").append(r.pontosDiretos()).append('\n')
@@ -148,13 +190,15 @@ public final class CaracterizacaoDiodoCtlr {
                 .append("PARÂMETROS DA POLARIZAÇÃO DIRETA\n")
                 .append("Tensão direta em ").append(formatar(r.correnteReferencia())).append(" A: ")
                 .append(formatarOpcional(r.tensaoDireta(), " V")).append('\n')
-                .append("Corrente de saturação Is: ").append(formatar(r.correnteSaturacao())).append(" A\n")
+                .append("Corrente de saturação I_s: ").append(formatar(r.correnteSaturacao())).append(" A\n")
                 .append("Fator de idealidade n: ").append(formatar(r.fatorIdealidade())).append('\n')
-                .append("Resistência dinâmica: ").append(formatarOpcional(r.resistenciaDinamica(), " ohm")).append('\n')
-                .append("Resistência em série Rs: ").append(formatarOpcional(r.resistenciaSerie(), " ohm")).append('\n')
-                .append("Faixa de corrente para Rs: ").append(formatar(r.correnteMinimaRs())).append(" A a ")
+                .append("Tensão térmica V_T: ").append(formatar(tensaoTermica(r))).append(" V\n")
+                .append("Resistência dinâmica direta em ").append(formatar(r.correnteReferencia())).append(" A: ")
+                .append(formatarOpcional(r.resistenciaDinamica(), " ohm")).append('\n')
+                .append("Resistência em série R_s: ").append(formatarOpcional(r.resistenciaSerie(), " ohm")).append('\n')
+                .append("Faixa de corrente para R_s: ").append(formatar(r.correnteMinimaRs())).append(" A a ")
                 .append(formatar(r.correnteMaximaRs())).append(" A\n")
-                .append("Pontos utilizados na estimativa de Rs: ").append(r.pontosResistenciaSerie()).append('\n')
+                .append("Pontos utilizados na estimativa de R_s: ").append(r.pontosResistenciaSerie()).append('\n')
                 .append("Coeficiente de determinação R²: ").append(formatar(r.rQuadrado())).append("\n\n");
         if (reversa != null) {
             texto.append("PARÂMETROS DA POLARIZAÇÃO REVERSA\n")
@@ -163,24 +207,53 @@ public final class CaracterizacaoDiodoCtlr {
                     .append(formatarOpcional(r.correnteReversaMedia(), " A")).append('\n')
                     .append("Módulo máximo da corrente em toda a região reversa: ")
                     .append(formatarOpcional(r.correnteReversaMaxima(), " A")).append('\n')
-                    .append("Tensão de ruptura em |I_R| = ")
+                    .append("\nREGIÃO DE FUGA ANTERIOR AO JOELHO\n")
+                    .append("Intervalo informado para |V_R|: ")
+                    .append(formatar(r.tensaoMinimaFuga())).append(" V a ")
+                    .append(formatar(r.tensaoMaximaFuga())).append(" V\n")
+                    .append("Pontos utilizados na corrente de fuga: ").append(r.pontosFuga()).append('\n')
+                    .append("Módulo médio da corrente de fuga: ")
+                    .append(formatarOpcional(r.correnteFugaMedia(), " A")).append('\n')
+                    .append("Módulo máximo da corrente de fuga: ")
+                    .append(formatarOpcional(r.correnteFugaMaxima(), " A")).append("\n\n")
+                    .append("JOELHO E REGIÃO DE RUPTURA\n")
+                    .append("Início operacional do joelho V_K em |I_R| = ")
+                    .append(formatar(r.correnteReferenciaRuptura() * FRACAO_INICIO_JOELHO)).append(" A: ")
+                    .append(formatarOpcional(r.tensaoInicioJoelho(), " V")).append('\n')
+                    .append("Tensão de ruptura V_BR em |I_R| = ")
                     .append(formatar(r.correnteReferenciaRuptura())).append(" A: ")
                     .append(r.tensaoRuptura() == null
                             ? "não disponível: a curva não alcança essa corrente de referência"
                             : formatar(r.tensaoRuptura()) + " V")
                     .append('\n')
+                    .append("Largura operacional do joelho (V_BR - V_K): ")
+                    .append(formatarOpcional(r.larguraJoelho(), " V")).append('\n')
+                    .append("Pontos utilizados no ajuste pós-ruptura: ").append(r.pontosPosRuptura()).append('\n')
+                    .append("Inclinação pós-ruptura d|I_R|/d|V_R|: ")
+                    .append(formatarOpcional(r.inclinacaoPosRuptura(), " S")).append('\n')
+                    .append("Resistência dinâmica efetiva pós-ruptura d|V_R|/d|I_R|: ")
+                    .append(formatarOpcional(r.resistenciaDinamicaPosRuptura(), " ohm")).append('\n')
+                    .append("Coeficiente de determinação R² pós-ruptura: ")
+                    .append(formatarOpcional(r.rQuadradoPosRuptura(), "")).append('\n')
                     .append("Razão de retificação em ±").append(formatar(r.tensaoRetificacao())).append(" V: ")
                     .append(formatarOpcional(r.razaoRetificacao(), "")).append("\n\n");
         }
         texto.append("MÉTODO\n")
-                .append("Os parâmetros Is e n foram estimados por regressão linear de ln(I) em função de V, ")
+                .append("Os parâmetros I_s e n foram estimados por regressão linear de ln(I) em função de V, ")
                 .append("usando a equação de Shockley na região direta selecionada. R² mede a qualidade desse ajuste. ")
-                .append("Rs foi estimada pela média de dV/dI - nVt/I na faixa de corrente informada. ")
-                .append("A tensão de ruptura é o módulo da tensão reversa interpolada no nível de corrente ")
-                .append("reversa de referência informado.\n\n")
+                .append("A tensão térmica é V_T = kT/q. R_s representa a resistência em série equivalente ")
+                .append("do diodo e foi estimada pela média de dV/dI - nV_T/I na faixa de corrente informada. ")
+                .append("A tensão de ruptura V_BR é o módulo da tensão reversa interpolada no nível de corrente ")
+                .append("de referência. O início operacional do joelho V_K foi definido em 10% desse nível. ")
+                .append("A corrente de fuga foi caracterizada no intervalo de módulo da tensão reversa ")
+                .append("informado pelo operador, que deve representar a região anterior ao joelho. ")
+                .append("Na região pós-ruptura, a inclinação foi obtida por regressão linear de |I_R| em função ")
+                .append("de |V_R|. A resistência dinâmica efetiva pós-ruptura corresponde ao inverso da ")
+                .append("inclinação média ajustada nessa faixa e não a uma derivada local em um único ponto.\n\n")
                 .append("OBSERVAÇÃO\n")
                 .append("Os resultados são estimativas dependentes da qualidade dos dados, da temperatura informada ")
-                .append("e do intervalo escolhido para o ajuste.");
+                .append("e dos intervalos escolhidos. A análise de histerese exige varreduras identificáveis de ida ")
+                .append("e volta e não é inferida de uma única sequência de dados.");
         return texto.toString();
     }
 
@@ -319,6 +392,46 @@ public final class CaracterizacaoDiodoCtlr {
                 : new EstimativaRs(soma / quantidade, quantidade);
     }
 
+    private AnalisePosRuptura analisarPosRuptura(List<PontoDiodo> pontos,
+                                                  double correnteReferencia,
+                                                  Double tensaoRuptura) {
+        if (tensaoRuptura == null) return AnalisePosRuptura.indisponivel();
+        List<PontoDiodo> posRuptura = pontos.stream()
+                .filter(p -> Math.abs(p.corrente()) >= correnteReferencia)
+                .filter(p -> Math.abs(p.tensao()) >= tensaoRuptura)
+                .sorted(Comparator.comparingDouble(p -> Math.abs(p.tensao())))
+                .toList();
+        if (posRuptura.size() < 3) return AnalisePosRuptura.indisponivel();
+
+        RegressaoXY regressao = regressaoLinearXY(posRuptura);
+        if (!Double.isFinite(regressao.inclinacao()) || regressao.inclinacao() <= 0)
+            return AnalisePosRuptura.indisponivel();
+        return new AnalisePosRuptura(regressao.inclinacao(), 1.0 / regressao.inclinacao(),
+                regressao.rQuadrado(), posRuptura.size());
+    }
+
+    private RegressaoXY regressaoLinearXY(List<PontoDiodo> pontos) {
+        int n = pontos.size();
+        double somaX = 0, somaY = 0, somaXX = 0, somaXY = 0;
+        for (PontoDiodo p : pontos) {
+            double x = Math.abs(p.tensao()), y = Math.abs(p.corrente());
+            somaX += x; somaY += y; somaXX += x * x; somaXY += x * y;
+        }
+        double denominador = n * somaXX - somaX * somaX;
+        if (Math.abs(denominador) < 1E-30) return new RegressaoXY(Double.NaN, Double.NaN);
+        double inclinacao = (n * somaXY - somaX * somaY) / denominador;
+        double intercepto = (somaY - inclinacao * somaX) / n;
+        double mediaY = somaY / n, ssTotal = 0, ssResiduos = 0;
+        for (PontoDiodo p : pontos) {
+            double y = Math.abs(p.corrente());
+            double previsto = intercepto + inclinacao * Math.abs(p.tensao());
+            ssTotal += Math.pow(y - mediaY, 2);
+            ssResiduos += Math.pow(y - previsto, 2);
+        }
+        double r2 = ssTotal == 0 ? 1 : 1 - ssResiduos / ssTotal;
+        return new RegressaoXY(inclinacao, r2);
+    }
+
     private boolean entre(double valor, double a, double b) {
         return valor >= Math.min(a, b) && valor <= Math.max(a, b);
     }
@@ -334,14 +447,31 @@ public final class CaracterizacaoDiodoCtlr {
     public record ResultadoDiodo(int pontosDiretos, int pontosAjuste, int pontosReversos,
                                  double tensaoMinima, double tensaoMaxima, double temperatura,
                                  double correnteReferencia, double tensaoRetificacao,
-                                 double correnteReferenciaRuptura, double correnteMinimaRs,
-                                 double correnteMaximaRs,
+                                 double correnteReferenciaRuptura,
+                                 double tensaoMinimaFuga, double tensaoMaximaFuga,
+                                 double correnteMinimaRs, double correnteMaximaRs,
                                  Double tensaoDireta, double correnteSaturacao,
                                  double fatorIdealidade, Double resistenciaDinamica,
                                  double rQuadrado, Double correnteReversaMedia,
-                                 Double correnteReversaMaxima, Double razaoRetificacao,
-                                 Double tensaoRuptura, Double resistenciaSerie,
+                                 Double correnteReversaMaxima,
+                                 Double correnteFugaMedia, Double correnteFugaMaxima,
+                                 int pontosFuga, Double razaoRetificacao,
+                                 Double tensaoRuptura, Double tensaoInicioJoelho,
+                                 Double larguraJoelho, Double inclinacaoPosRuptura,
+                                 Double resistenciaDinamicaPosRuptura,
+                                 Double rQuadradoPosRuptura, int pontosPosRuptura,
+                                 Double resistenciaSerie,
                                  int pontosResistenciaSerie) { }
+    private double tensaoTermica(ResultadoDiodo r) {
+        return CONSTANTE_BOLTZMANN * r.temperatura() / CARGA_ELEMENTAR;
+    }
     private record Regressao(double inclinacao, double intercepto, double rQuadrado) { }
+    private record RegressaoXY(double inclinacao, double rQuadrado) { }
     private record EstimativaRs(Double valor, int quantidadePontos) { }
+    private record AnalisePosRuptura(Double inclinacao, Double resistenciaDinamica,
+                                     Double rQuadrado, int quantidadePontos) {
+        private static AnalisePosRuptura indisponivel() {
+            return new AnalisePosRuptura(null, null, null, 0);
+        }
+    }
 }

@@ -75,12 +75,17 @@ public final class TelaCaracterizacaoDiodo {
         TextField tensaoMaxima = new TextField("0.85");
         TextField tensaoRetificacao = new TextField("0.80");
         TextField correnteReferenciaRuptura = new TextField("1E-3");
+        TextField tensaoMinimaFuga = new TextField("1");
+        TextField tensaoMaximaFuga = new TextField("35");
         TextField correnteMinimaRs = new TextField("1E-3");
         TextField correnteMaximaRs = new TextField("1E-2");
         for (TextField campo : List.of(temperatura, correnteReferencia, tensaoMinima,
                 tensaoMaxima, tensaoRetificacao, correnteReferenciaRuptura,
+                tensaoMinimaFuga, tensaoMaximaFuga,
                 correnteMinimaRs, correnteMaximaRs)) campo.setPrefColumnCount(12);
         correnteReferenciaRuptura.disableProperty().bind(usarReversa.selectedProperty().not());
+        tensaoMinimaFuga.disableProperty().bind(usarReversa.selectedProperty().not());
+        tensaoMaximaFuga.disableProperty().bind(usarReversa.selectedProperty().not());
 
         GridPane formulario = new GridPane();
         formulario.setHgap(10); formulario.setVgap(9);
@@ -94,9 +99,11 @@ public final class TelaCaracterizacaoDiodo {
                 new Label("Tensão máxima do ajuste (V):"), tensaoMaxima);
         formulario.addRow(4, new Label("Tensão da razão de retificação (V):"), tensaoRetificacao,
                 new Label("Corrente de referência da ruptura (A):"), correnteReferenciaRuptura);
-        formulario.addRow(5, new Label("Corrente mínima para Rs (A):"), correnteMinimaRs,
-                new Label("Corrente máxima para Rs (A):"), correnteMaximaRs);
-        formulario.add(usarReversa, 1, 6, 3, 1);
+        formulario.addRow(5, new Label("|V_R| mínimo para fuga (V):"), tensaoMinimaFuga,
+                new Label("|V_R| máximo para fuga (V):"), tensaoMaximaFuga);
+        formulario.addRow(6, new Label("Corrente mínima para R_s (A):"), correnteMinimaRs,
+                new Label("Corrente máxima para R_s (A):"), correnteMaximaRs);
+        formulario.add(usarReversa, 1, 7, 3, 1);
         ColumnConstraints rotuloEsquerdo = new ColumnConstraints();
         rotuloEsquerdo.setMinWidth(230); rotuloEsquerdo.setPrefWidth(230);
         ColumnConstraints campoEsquerdo = new ColumnConstraints();
@@ -129,7 +136,8 @@ public final class TelaCaracterizacaoDiodo {
                 ResultadoDiodo resultado = controller.caracterizar(curvaDireta.getValue(), reversa,
                         numero(temperatura), numero(correnteReferencia), numero(tensaoMinima),
                         numero(tensaoMaxima), numero(tensaoRetificacao),
-                        correnteRuptura, numero(correnteMinimaRs), numero(correnteMaximaRs));
+                        correnteRuptura, numero(tensaoMinimaFuga), numero(tensaoMaximaFuga),
+                        numero(correnteMinimaRs), numero(correnteMaximaRs));
                 relatorio.setText(controller.gerarRelatorio(experimento, curvaDireta.getValue(), reversa, resultado));
                 copiar.setDisable(false);
             } catch (IllegalArgumentException ex) {

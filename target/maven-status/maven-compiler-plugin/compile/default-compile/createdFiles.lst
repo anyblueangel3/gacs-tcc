@@ -7,6 +7,7 @@ br\uel\gacs\dao\CriadorBancoDados.class
 br\uel\gacs\application\PainelExperimento.class
 br\uel\gacs\application\TelaCaracterizacaoDiodo.class
 br\uel\gacs\controller\CaracterizacaoDiodoCtlr$EstimativaRs.class
+br\uel\gacs\controller\CaracterizacaoDiodoCtlr$AnalisePosRuptura.class
 br\uel\gacs\controller\CaracterizacaoDiodoCtlr$ResultadoDiodo.class
 br\uel\gacs\controller\GraficoCtlr.class
 br\uel\gacs\util\SenhaUtil.class
@@ -53,6 +54,7 @@ br\uel\gacs\util\FormatadorNumero.class
 br\uel\gacs\controller\CaracterizacaoDiodoCtlr$PontoDiodo.class
 br\uel\gacs\model\PerfilUsuario.class
 br\uel\gacs\dao\CurvaDAO.class
+br\uel\gacs\controller\CaracterizacaoDiodoCtlr$RegressaoXY.class
 br\uel\gacs\dao\UsuarioDAO.class
 br\uel\gacs\model\Coluna.class
 br\uel\gacs\controller\LoginCtlr.class
