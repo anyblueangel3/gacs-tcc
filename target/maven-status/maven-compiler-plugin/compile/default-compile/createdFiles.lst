@@ -6,6 +6,7 @@ br\uel\gacs\controller\CaracterizacaoDiodoCtlr.class
 br\uel\gacs\dao\CriadorBancoDados.class
 br\uel\gacs\application\PainelExperimento.class
 br\uel\gacs\application\TelaCaracterizacaoDiodo.class
+br\uel\gacs\controller\CaracterizacaoDiodoCtlr$EstimativaRs.class
 br\uel\gacs\controller\CaracterizacaoDiodoCtlr$ResultadoDiodo.class
 br\uel\gacs\controller\GraficoCtlr.class
 br\uel\gacs\util\SenhaUtil.class

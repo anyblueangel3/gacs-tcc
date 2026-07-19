@@ -60,7 +60,10 @@ public final class CaracterizacaoDiodoCtlr {
     public ResultadoDiodo caracterizar(CurvaDisponivel direta, CurvaDisponivel reversa,
                                         double temperatura, double correnteReferencia,
                                         double tensaoMinima, double tensaoMaxima,
-                                        double tensaoRetificacao) throws SQLException {
+                                        double tensaoRetificacao,
+                                        double correnteReferenciaRuptura,
+                                        double correnteMinimaRs,
+                                        double correnteMaximaRs) throws SQLException {
         if (direta == null) throw new IllegalArgumentException("Selecione a curva direta.");
         if (!Double.isFinite(temperatura) || temperatura <= 0)
             throw new IllegalArgumentException("A temperatura deve ser maior que zero kelvin.");
@@ -71,8 +74,16 @@ public final class CaracterizacaoDiodoCtlr {
             throw new IllegalArgumentException("Informe um intervalo de tensão válido para o ajuste.");
         if (!Double.isFinite(tensaoRetificacao) || tensaoRetificacao <= 0)
             throw new IllegalArgumentException("A tensão da razão de retificação deve ser positiva.");
+        if (reversa != null && (!Double.isFinite(correnteReferenciaRuptura) || correnteReferenciaRuptura <= 0))
+            throw new IllegalArgumentException("A corrente de referência da ruptura deve ser positiva.");
+        if (!Double.isFinite(correnteMinimaRs) || !Double.isFinite(correnteMaximaRs)
+                || correnteMinimaRs <= 0 || correnteMinimaRs >= correnteMaximaRs)
+            throw new IllegalArgumentException("Informe um intervalo de corrente válido para a resistência em série.");
 
         List<PontoDiodo> pontosDiretos = carregarPontos(direta.curva());
+        int quantidadePontosDiretos = (int) pontosDiretos.stream()
+                .filter(p -> p.tensao() > 0 && p.corrente() > 0)
+                .count();
         List<PontoDiodo> ajuste = pontosDiretos.stream()
                 .filter(p -> p.tensao() >= tensaoMinima && p.tensao() <= tensaoMaxima)
                 .filter(p -> p.corrente() > 0 && Double.isFinite(Math.log(p.corrente())))
@@ -88,10 +99,13 @@ public final class CaracterizacaoDiodoCtlr {
         double fatorIdealidade = 1.0 / (regressao.inclinacao() * tensaoTermica);
         Double tensaoDireta = interpolarTensaoPorCorrente(pontosDiretos, correnteReferencia);
         Double resistenciaDinamica = resistenciaDinamica(pontosDiretos, correnteReferencia);
+        EstimativaRs estimativaRs = estimarResistenciaSerie(pontosDiretos, fatorIdealidade,
+                tensaoTermica, correnteMinimaRs, correnteMaximaRs);
 
         Double correnteReversaMedia = null;
         Double correnteReversaMaxima = null;
         Double razaoRetificacao = null;
+        Double tensaoRuptura = null;
         int pontosReversos = 0;
         if (reversa != null) {
             List<PontoDiodo> dadosReversos = carregarPontos(reversa.curva()).stream()
@@ -101,6 +115,7 @@ public final class CaracterizacaoDiodoCtlr {
             pontosReversos = dadosReversos.size();
             correnteReversaMedia = dadosReversos.stream().mapToDouble(p -> Math.abs(p.corrente())).average().orElseThrow();
             correnteReversaMaxima = dadosReversos.stream().mapToDouble(p -> Math.abs(p.corrente())).max().orElseThrow();
+            tensaoRuptura = interpolarTensaoRuptura(dadosReversos, correnteReferenciaRuptura);
             Double correnteDiretaNaTensao = interpolarCorrentePorTensao(pontosDiretos, tensaoRetificacao);
             Double correnteReversaNaTensao = interpolarCorrentePorTensao(dadosReversos, -tensaoRetificacao);
             if (correnteDiretaNaTensao != null && correnteReversaNaTensao != null
@@ -109,10 +124,12 @@ public final class CaracterizacaoDiodoCtlr {
             }
         }
 
-        return new ResultadoDiodo(pontosDiretos.size(), ajuste.size(), pontosReversos,
+        return new ResultadoDiodo(quantidadePontosDiretos, ajuste.size(), pontosReversos,
                 tensaoMinima, tensaoMaxima, temperatura, correnteReferencia, tensaoRetificacao,
+                correnteReferenciaRuptura, correnteMinimaRs, correnteMaximaRs,
                 tensaoDireta, correnteSaturacao, fatorIdealidade, resistenciaDinamica,
-                regressao.rQuadrado(), correnteReversaMedia, correnteReversaMaxima, razaoRetificacao);
+                regressao.rQuadrado(), correnteReversaMedia, correnteReversaMaxima,
+                razaoRetificacao, tensaoRuptura, estimativaRs.valor(), estimativaRs.quantidadePontos());
     }
 
     public String gerarRelatorio(Experimento experimento, CurvaDisponivel direta,
@@ -134,20 +151,33 @@ public final class CaracterizacaoDiodoCtlr {
                 .append("Corrente de saturação Is: ").append(formatar(r.correnteSaturacao())).append(" A\n")
                 .append("Fator de idealidade n: ").append(formatar(r.fatorIdealidade())).append('\n')
                 .append("Resistência dinâmica: ").append(formatarOpcional(r.resistenciaDinamica(), " ohm")).append('\n')
+                .append("Resistência em série Rs: ").append(formatarOpcional(r.resistenciaSerie(), " ohm")).append('\n')
+                .append("Faixa de corrente para Rs: ").append(formatar(r.correnteMinimaRs())).append(" A a ")
+                .append(formatar(r.correnteMaximaRs())).append(" A\n")
+                .append("Pontos utilizados na estimativa de Rs: ").append(r.pontosResistenciaSerie()).append('\n')
                 .append("Coeficiente de determinação R²: ").append(formatar(r.rQuadrado())).append("\n\n");
         if (reversa != null) {
             texto.append("PARÂMETROS DA POLARIZAÇÃO REVERSA\n")
                     .append("Pontos reversos utilizados: ").append(r.pontosReversos()).append('\n')
-                    .append("Módulo da corrente reversa média: ")
+                    .append("Módulo médio da corrente em toda a região reversa: ")
                     .append(formatarOpcional(r.correnteReversaMedia(), " A")).append('\n')
-                    .append("Módulo da corrente reversa máxima: ")
+                    .append("Módulo máximo da corrente em toda a região reversa: ")
                     .append(formatarOpcional(r.correnteReversaMaxima(), " A")).append('\n')
+                    .append("Tensão de ruptura em |I_R| = ")
+                    .append(formatar(r.correnteReferenciaRuptura())).append(" A: ")
+                    .append(r.tensaoRuptura() == null
+                            ? "não disponível: a curva não alcança essa corrente de referência"
+                            : formatar(r.tensaoRuptura()) + " V")
+                    .append('\n')
                     .append("Razão de retificação em ±").append(formatar(r.tensaoRetificacao())).append(" V: ")
                     .append(formatarOpcional(r.razaoRetificacao(), "")).append("\n\n");
         }
         texto.append("MÉTODO\n")
                 .append("Os parâmetros Is e n foram estimados por regressão linear de ln(I) em função de V, ")
-                .append("usando a equação de Shockley na região direta selecionada. R² mede a qualidade desse ajuste.\n\n")
+                .append("usando a equação de Shockley na região direta selecionada. R² mede a qualidade desse ajuste. ")
+                .append("Rs foi estimada pela média de dV/dI - nVt/I na faixa de corrente informada. ")
+                .append("A tensão de ruptura é o módulo da tensão reversa interpolada no nível de corrente ")
+                .append("reversa de referência informado.\n\n")
                 .append("OBSERVAÇÃO\n")
                 .append("Os resultados são estimativas dependentes da qualidade dos dados, da temperatura informada ")
                 .append("e do intervalo escolhido para o ajuste.");
@@ -215,6 +245,35 @@ public final class CaracterizacaoDiodoCtlr {
         return ordenados.stream().filter(p -> p.tensao() == tensao).map(PontoDiodo::corrente).findFirst().orElse(null);
     }
 
+    /**
+     * Obtém o módulo da tensão reversa no nível de corrente especificado.
+     * A interpolação é realizada entre pontos consecutivos na varredura de tensão;
+     * retorna {@code null} quando os dados não alcançam a corrente de referência.
+     */
+    private Double interpolarTensaoRuptura(List<PontoDiodo> pontos, double correnteReferencia) {
+        List<PontoDiodo> reversos = pontos.stream()
+                .filter(p -> p.tensao() < 0 && p.corrente() < 0)
+                .sorted(Comparator.comparingDouble(p -> Math.abs(p.tensao())))
+                .toList();
+        for (PontoDiodo ponto : reversos) {
+            if (Math.abs(ponto.corrente()) == correnteReferencia)
+                return Math.abs(ponto.tensao());
+        }
+        for (int i = 1; i < reversos.size(); i++) {
+            PontoDiodo a = reversos.get(i - 1), b = reversos.get(i);
+            double correnteA = Math.abs(a.corrente());
+            double correnteB = Math.abs(b.corrente());
+            if (entre(correnteReferencia, correnteA, correnteB) && correnteB != correnteA) {
+                double tensao = Math.abs(a.tensao())
+                        + (correnteReferencia - correnteA)
+                        * (Math.abs(b.tensao()) - Math.abs(a.tensao()))
+                        / (correnteB - correnteA);
+                return Double.isFinite(tensao) ? Math.abs(tensao) : null;
+            }
+        }
+        return null;
+    }
+
     private Double resistenciaDinamica(List<PontoDiodo> pontos, double corrente) {
         List<PontoDiodo> diretos = pontos.stream().filter(p -> p.tensao() >= 0 && p.corrente() >= 0)
                 .sorted(Comparator.comparingDouble(PontoDiodo::tensao)).toList();
@@ -229,6 +288,35 @@ public final class CaracterizacaoDiodoCtlr {
         double deltaI = diretos.get(posterior).corrente() - diretos.get(anterior).corrente();
         return deltaI == 0 ? null : Math.abs((diretos.get(posterior).tensao()
                 - diretos.get(anterior).tensao()) / deltaI);
+    }
+
+    private EstimativaRs estimarResistenciaSerie(List<PontoDiodo> pontos, double fatorIdealidade,
+                                                   double tensaoTermica, double correnteMinima,
+                                                   double correnteMaxima) {
+        List<PontoDiodo> diretos = pontos.stream()
+                .filter(p -> p.tensao() > 0 && p.corrente() > 0)
+                .sorted(Comparator.comparingDouble(PontoDiodo::corrente))
+                .toList();
+        if (diretos.size() < 3) return new EstimativaRs(null, 0);
+
+        double soma = 0;
+        int quantidade = 0;
+        for (int i = 1; i < diretos.size() - 1; i++) {
+            PontoDiodo ponto = diretos.get(i);
+            if (ponto.corrente() < correnteMinima || ponto.corrente() > correnteMaxima) continue;
+            PontoDiodo anterior = diretos.get(i - 1);
+            PontoDiodo posterior = diretos.get(i + 1);
+            double deltaI = posterior.corrente() - anterior.corrente();
+            if (deltaI == 0) continue;
+            double derivada = (posterior.tensao() - anterior.tensao()) / deltaI;
+            double resistenciaSerie = derivada - fatorIdealidade * tensaoTermica / ponto.corrente();
+            if (Double.isFinite(resistenciaSerie) && resistenciaSerie >= 0) {
+                soma += resistenciaSerie;
+                quantidade++;
+            }
+        }
+        return quantidade == 0 ? new EstimativaRs(null, 0)
+                : new EstimativaRs(soma / quantidade, quantidade);
     }
 
     private boolean entre(double valor, double a, double b) {
@@ -246,9 +334,14 @@ public final class CaracterizacaoDiodoCtlr {
     public record ResultadoDiodo(int pontosDiretos, int pontosAjuste, int pontosReversos,
                                  double tensaoMinima, double tensaoMaxima, double temperatura,
                                  double correnteReferencia, double tensaoRetificacao,
+                                 double correnteReferenciaRuptura, double correnteMinimaRs,
+                                 double correnteMaximaRs,
                                  Double tensaoDireta, double correnteSaturacao,
                                  double fatorIdealidade, Double resistenciaDinamica,
                                  double rQuadrado, Double correnteReversaMedia,
-                                 Double correnteReversaMaxima, Double razaoRetificacao) { }
+                                 Double correnteReversaMaxima, Double razaoRetificacao,
+                                 Double tensaoRuptura, Double resistenciaSerie,
+                                 int pontosResistenciaSerie) { }
     private record Regressao(double inclinacao, double intercepto, double rQuadrado) { }
+    private record EstimativaRs(Double valor, int quantidadePontos) { }
 }
