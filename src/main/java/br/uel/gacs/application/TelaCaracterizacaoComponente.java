@@ -1,6 +1,5 @@
 package br.uel.gacs.application;
 
-import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
@@ -31,16 +30,7 @@ public final class TelaCaracterizacaoComponente {
         dialogo.getDialogPane().getButtonTypes().addAll(diodo, fet, ButtonType.CANCEL);
         dialogo.showAndWait().ifPresent(escolha -> {
             if (escolha == diodo) new TelaCaracterizacaoDiodo(janelaPai, idExperimento).exibir();
-            else if (escolha == fet) informar("Caracterização de FET");
+            else if (escolha == fet) new TelaCaracterizacaoFet(janelaPai, idExperimento).exibir();
         });
-    }
-
-    private void informar(String tipo) {
-        Alert alerta = new Alert(Alert.AlertType.INFORMATION);
-        alerta.initOwner(janelaPai);
-        alerta.setTitle("GACS");
-        alerta.setHeaderText(tipo);
-        alerta.setContentText("A caracterização de FET será implementada em um próximo incremento.");
-        alerta.showAndWait();
     }
 }

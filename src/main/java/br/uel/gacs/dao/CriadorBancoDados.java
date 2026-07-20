@@ -72,6 +72,18 @@ public final class CriadorBancoDados {
         ) ENGINE=InnoDB
         """,
         """
+        CREATE TABLE CurvaFet (
+            idCurva BIGINT PRIMARY KEY,
+            tipoCurvaFet VARCHAR(20) NOT NULL,
+            valorTensaoConstante DOUBLE NOT NULL,
+            CONSTRAINT ck_curva_fet_tipo
+                CHECK (tipoCurvaFet IN ('SAIDA', 'TRANSFERENCIA')),
+            CONSTRAINT fk_curva_fet_curva
+                FOREIGN KEY (idCurva) REFERENCES Curva(id)
+                ON DELETE CASCADE
+        ) ENGINE=InnoDB
+        """,
+        """
         CREATE TABLE Grafico (
             id BIGINT AUTO_INCREMENT PRIMARY KEY,
             idExperimento BIGINT NOT NULL,
