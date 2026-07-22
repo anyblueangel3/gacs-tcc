@@ -30,7 +30,6 @@ import javafx.scene.paint.Paint;
 import javafx.scene.shape.Path;
 import javafx.scene.transform.Scale;
 import javafx.stage.FileChooser;
-import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 
@@ -62,8 +61,6 @@ public final class TelaPlotagemGrafico {
         }
 
         Stage janela = new Stage();
-        janela.initOwner(janelaPai);
-        janela.initModality(Modality.WINDOW_MODAL);
         janela.setTitle("Plotagem — " + grafico.getNome());
 
         Button salvar = new Button("Salvar PNG");
@@ -79,7 +76,7 @@ public final class TelaPlotagemGrafico {
         raiz.setPadding(new Insets(14));
         raiz.setBottom(rodape);
         janela.setScene(new Scene(raiz, 1060, 820));
-        janela.showAndWait();
+        janela.show();
     }
 
     private LineChart<Number, Number> criarGrafico(java.util.List<SerieDoGrafico> series) {

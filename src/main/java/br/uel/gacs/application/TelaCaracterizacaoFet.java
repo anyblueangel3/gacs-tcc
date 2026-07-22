@@ -3,6 +3,8 @@ package br.uel.gacs.application;
 import br.uel.gacs.controller.CaracterizacaoFetCtlr;
 import br.uel.gacs.controller.CaracterizacaoFetCtlr.CurvaDisponivel;
 import br.uel.gacs.controller.CaracterizacaoFetCtlr.ResultadoGmLocal;
+import br.uel.gacs.controller.CaracterizacaoFetCtlr.ResultadoGanhoIntegrado;
+import br.uel.gacs.controller.CaracterizacaoFetCtlr.ResultadoCurvaSaida;
 import br.uel.gacs.controller.CaracterizacaoFetCtlr.ResultadoSaida;
 import br.uel.gacs.controller.CaracterizacaoFetCtlr.ResultadoTransferencia;
 import br.uel.gacs.model.CurvaFet;
@@ -83,6 +85,7 @@ public final class TelaCaracterizacaoFet {
         TextField saturacaoMaxima = campo("5");
         TextField gmMinimo = campo("0");
         TextField gmMaximo = campo("5");
+        TextField vgsReferencia = campo("");
         CheckBox gmLocal = new CheckBox("Calcular g_m local com janela de três pontos");
 
         GridPane formulario = new GridPane();
@@ -99,6 +102,8 @@ public final class TelaCaracterizacaoFet {
         formulario.addRow(4, new Label("Intervalo de g_m — V_GS mínimo (V):"), gmMinimo,
                 new Label("V_GS máximo (V):"), gmMaximo);
         formulario.add(gmLocal, 1, 5, 3, 1);
+        formulario.addRow(6, new Label("Ganho intrínseco — V_GS de referência (V):"),
+                vgsReferencia);
         configurarColunas(formulario);
 
         Runnable atualizarCampos = () -> {
@@ -138,6 +143,8 @@ public final class TelaCaracterizacaoFet {
 
         Button salvar = new Button("Salvar configuração da curva");
         Button calcular = new Button("Calcular caracterização");
+        Button calcularFamilia = new Button("Calcular família de saída");
+        Button calcularGanho = new Button("Calcular ganho intrínseco");
         Button copiar = new Button("Copiar relatório");
         Button fechar = new Button("Fechar");
         copiar.setDisable(true);
@@ -197,6 +204,53 @@ public final class TelaCaracterizacaoFet {
             }
         });
 
+        calcularFamilia.setOnAction(evento -> {
+            try {
+                List<CurvaDisponivel> curvasAtualizadas = curvas.stream()
+                        .map(item -> new CurvaDisponivel(
+                                item.curva(), item.colunaX(), item.colunaY(),
+                                configuracoes.get(item.curva().getId()),
+                                item.quantidadePontos()))
+                        .toList();
+                List<ResultadoCurvaSaida> resultados = controller.analisarFamiliaSaida(
+                        curvasAtualizadas, numero(ohmicoMinimo), numero(ohmicoMaximo),
+                        numero(saturacaoMinima), numero(saturacaoMaxima));
+                relatorio.setText(relatorioFamiliaSaida(experimento, resultados));
+                copiar.setDisable(false);
+            } catch (IllegalArgumentException erro) {
+                erro(erro.getMessage());
+            } catch (SQLException erro) {
+                erro("Não foi possível carregar as curvas da família de saída.");
+            }
+        });
+
+        calcularGanho.setOnAction(evento -> {
+            try {
+                CurvaDisponivel selecionada = exigirCurva(curva);
+                List<CurvaDisponivel> curvasAtualizadas = curvas.stream()
+                        .map(item -> new CurvaDisponivel(
+                                item.curva(), item.colunaX(), item.colunaY(),
+                                configuracoes.get(item.curva().getId()),
+                                item.quantidadePontos()))
+                        .toList();
+                CurvaDisponivel transferencia = curvasAtualizadas.stream()
+                        .filter(item -> item.curva().getId()
+                                .equals(selecionada.curva().getId()))
+                        .findFirst().orElseThrow();
+                ResultadoGanhoIntegrado resultado = controller.analisarGanhoIntrinseco(
+                        transferencia, curvasAtualizadas, numero(vgsReferencia),
+                        numero(gmMinimo), numero(gmMaximo),
+                        numero(saturacaoMinima), numero(saturacaoMaxima),
+                        gmLocal.isSelected());
+                relatorio.setText(relatorioGanhoIntrinseco(experimento, resultado));
+                copiar.setDisable(false);
+            } catch (IllegalArgumentException erro) {
+                erro(erro.getMessage());
+            } catch (SQLException erro) {
+                erro("Não foi possível integrar as curvas para calcular o ganho intrínseco.");
+            }
+        });
+
         copiar.setOnAction(evento -> {
             ClipboardContent conteudo = new ClipboardContent();
             conteudo.putString(relatorio.getText());
@@ -206,7 +260,8 @@ public final class TelaCaracterizacaoFet {
 
         Label titulo = new Label("Caracterização genérica em unidades SI");
         titulo.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
-        HBox botoes = new HBox(8, salvar, calcular, copiar);
+        HBox botoes = new HBox(8, salvar, calcular, calcularFamilia,
+                calcularGanho, copiar);
         VBox topo = new VBox(10, titulo, formulario, botoes);
         topo.setPadding(new Insets(0, 0, 12, 0));
 
@@ -265,6 +320,76 @@ public final class TelaCaracterizacaoFet {
                 .append("R²: ").append(formatarOpcional(r.ajuste().rQuadrado())).append('\n');
         adicionarAdvertencias(texto, r.advertencias());
         return texto.toString();
+    }
+
+    private String relatorioFamiliaSaida(Experimento experimento,
+                                          List<ResultadoCurvaSaida> resultados) {
+        StringBuilder texto = new StringBuilder(
+                "RELATÓRIO CONSOLIDADO — FAMÍLIA DE CURVAS DE SAÍDA DE FET\n\n")
+                .append("Experimento: ").append(experimento.getNomeExperimento()).append('\n')
+                .append("Curvas analisadas: ").append(resultados.size()).append("\n\n");
+
+        for (ResultadoCurvaSaida item : resultados) {
+            CurvaDisponivel curva = item.curva();
+            CurvaFet configuracao = curva.configuracao();
+            ResultadoSaida r = item.resultado();
+            texto.append("CURVA: ").append(curva.curva().getNome()).append('\n')
+                    .append("V_GS constante: ")
+                    .append(formatar(configuracao.getValorTensaoConstante())).append(" V\n")
+                    .append("Pontos válidos: ").append(r.pontosValidos()).append('\n')
+                    .append("Região ôhmica: ").append(formatar(r.tensaoMinimaOhmica()))
+                    .append(" V a ").append(formatar(r.tensaoMaximaOhmica())).append(" V; ")
+                    .append(r.pontosOhmicos()).append(" pontos\n")
+                    .append("G_DS,ômica: ").append(formatar(r.condutanciaOhmica()))
+                    .append(" S; R_DS,ômica: ")
+                    .append(formatarResistencia(r.resistenciaOhmica())).append("; R²: ")
+                    .append(formatarOpcional(r.ajusteOhmico().rQuadrado())).append('\n')
+                    .append("Saturação: ").append(formatar(r.tensaoMinimaSaturacao()))
+                    .append(" V a ").append(formatar(r.tensaoMaximaSaturacao())).append(" V; ")
+                    .append(r.pontosSaturacao()).append(" pontos\n")
+                    .append("g_ds: ").append(formatar(r.condutanciaSaida()))
+                    .append(" S; r_o: ").append(formatarResistencia(r.resistenciaSaida()))
+                    .append("; R²: ")
+                    .append(formatarOpcional(r.ajusteSaturacao().rQuadrado())).append('\n');
+            if (r.joelho() == null) {
+                texto.append("Joelho operacional: não calculado\n");
+            } else {
+                texto.append("Joelho operacional: V_DS = ")
+                        .append(formatar(r.joelho().tensao())).append(" V; I_D = ")
+                        .append(formatar(r.joelho().corrente())).append(" A\n");
+            }
+            adicionarAdvertencias(texto, r.advertencias());
+            texto.append("\n----------------------------------------\n\n");
+        }
+        return texto.toString();
+    }
+
+    private String relatorioGanhoIntrinseco(Experimento experimento,
+                                             ResultadoGanhoIntegrado r) {
+        double gm = r.resultadoGmLocal() == null
+                ? r.resultadoTransferencia().transcondutancia()
+                : r.resultadoGmLocal().transcondutancia();
+        return new StringBuilder("RELATÓRIO DE GANHO INTRÍNSECO DE FET\n\n")
+                .append("Experimento: ").append(experimento.getNomeExperimento()).append('\n')
+                .append("Curva de transferência: ")
+                .append(r.curvaTransferencia().curva().getNome()).append('\n')
+                .append("V_DS constante: ")
+                .append(formatar(r.curvaTransferencia().configuracao()
+                        .getValorTensaoConstante())).append(" V\n")
+                .append("Curva de saída: ").append(r.curvaSaida().curva().getNome()).append('\n')
+                .append("V_GS de referência: ").append(formatar(r.vgsReferencia()))
+                .append(" V\n\n")
+                .append("g_m: ").append(formatar(gm)).append(" S\n")
+                .append("Método de g_m: ").append(r.ganho().classificacao()).append('\n')
+                .append("g_ds: ").append(formatar(
+                        r.resultadoSaida().condutanciaSaida())).append(" S\n")
+                .append("r_o: ").append(formatarResistencia(
+                        r.resultadoSaida().resistenciaSaida())).append('\n')
+                .append("A_v0 = g_m r_o: ").append(formatarGanho(r.ganho().ganho()))
+                .append(" V/V\n")
+                .append("A_v0: ").append(formatarGanho(r.ganho().ganhoDecibeis()))
+                .append(" dB\n")
+                .toString();
     }
 
     private String relatorioGmLocal(Experimento experimento, CurvaDisponivel curva,
@@ -410,6 +535,14 @@ public final class TelaCaracterizacaoFet {
             return "teoricamente infinita";
         }
         return formatar(valor) + " ohm";
+    }
+
+    private String formatarGanho(double valor) {
+        if (Double.isInfinite(valor)) {
+            return valor > 0.0 ? "teoricamente infinito"
+                    : "teoricamente menos infinito";
+        }
+        return formatar(valor);
     }
 
     private void informar(String texto) {

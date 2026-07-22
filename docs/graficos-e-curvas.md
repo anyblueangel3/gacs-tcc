@@ -16,3 +16,7 @@ Na caracterização de FET, a curva pode receber a especialização `CurvaFet`:
 
 `Curva` permanece genérica; apenas curvas efetivamente classificadas para FET
 possuem registro em `CurvaFet`.
+
+A plotagem é exibida em janela independente e não modal. Ela permanece aberta
+até ser fechada pelo usuário e pode ser movida, redimensionada, minimizada,
+maximizada ou restaurada sem bloquear as demais telas do GACS.

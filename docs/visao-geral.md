@@ -19,6 +19,13 @@ Experimento → Colunas → Curvas → Gráficos → Caracterização
 - criação de curvas e gráficos;
 - caracterização elétrica de diodos;
 - caracterização elétrica de FETs.
+- distribuição instalável para o ambiente Windows.
+
+Para a entrega de 3 de agosto de 2026, o escopo funcional está congelado. Após
+a análise de famílias de curvas de saída, a integração do ganho intrínseco e a
+preparação do instalador, o trabalho limita-se a correções, testes, documentação
+e preparação da versão de entrega. Famílias de curvas de transferência ficam
+fora desta etapa.
 
 ## Tecnologias
 

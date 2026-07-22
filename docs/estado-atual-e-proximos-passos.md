@@ -21,16 +21,19 @@
 - botão FET integrado à tela `TelaCaracterizacaoFet`;
 - configuração persistente de curvas de saída e transferência;
 - cálculo e relatório individual das regiões de saída e da transcondutância.
+- cálculo consolidado de famílias de curvas de saída, ordenadas por `V_GS`.
+- integração visual de `g_m` e `r_o` para obtenção de `A_v0 = g_m r_o`, com
+  validação das condições de polarização.
 
 ## Aprovado e ainda não implementado
 
-- integração visual do ganho intrínseco entre curvas compatíveis;
-- testes completos com famílias experimentais de FET.
+- testes completos com famílias experimentais de FET;
+- distribuição instalável do GACS.
 
 ## Próxima sequência
 
 1. compilar e testar o novo fluxo no ambiente Java 21 do projeto;
 2. corrigir eventuais problemas observados na interface;
-3. integrar o ganho intrínseco entre curvas compatíveis;
-4. validar uma família completa de curvas;
-5. conferir novamente código e documentação.
+3. validar uma família completa de curvas de saída;
+4. preparar a distribuição instalável;
+5. conferir novamente código e documentação para a entrega.

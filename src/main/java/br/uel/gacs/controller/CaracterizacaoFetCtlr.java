@@ -184,6 +184,41 @@ public final class CaracterizacaoFetCtlr {
                 List.copyOf(advertencias));
     }
 
+    public List<ResultadoCurvaSaida> analisarFamiliaSaida(
+            List<CurvaDisponivel> curvas,
+            double tensaoMinimaOhmica,
+            double tensaoMaximaOhmica,
+            double tensaoMinimaSaturacao,
+            double tensaoMaximaSaturacao) throws SQLException {
+        if (curvas == null) {
+            throw new IllegalArgumentException("A lista de curvas não pode ser nula.");
+        }
+
+        List<CurvaDisponivel> curvasSaida = curvas.stream()
+                .filter(item -> item != null
+                        && item.configuracao() != null
+                        && item.configuracao().getTipoCurvaFet() == TipoCurvaFet.SAIDA)
+                .sorted(Comparator.comparingDouble(
+                        item -> item.configuracao().getValorTensaoConstante()))
+                .toList();
+        if (curvasSaida.size() < 2) {
+            throw new IllegalArgumentException(
+                    "Configure pelo menos duas curvas de saída para analisar a família.");
+        }
+
+        List<ResultadoCurvaSaida> resultados = new ArrayList<>();
+        for (CurvaDisponivel item : curvasSaida) {
+            ResultadoSaida resultado = analisarSaida(
+                    carregarPontos(item.curva()),
+                    tensaoMinimaOhmica,
+                    tensaoMaximaOhmica,
+                    tensaoMinimaSaturacao,
+                    tensaoMaximaSaturacao);
+            resultados.add(new ResultadoCurvaSaida(item, resultado));
+        }
+        return List.copyOf(resultados);
+    }
+
     public ResultadoTransferencia analisarTransferenciaPorIntervalo(
             List<PontoFet> pontos, double tensaoMinima, double tensaoMaxima) {
         validarIntervalo(tensaoMinima, tensaoMaxima, "transcondutância");
@@ -254,7 +289,7 @@ public final class CaracterizacaoFetCtlr {
         validarIntervalo(vdsMinimoSaturacao, vdsMaximoSaturacao,
                 "saturação usada em r_o");
 
-        if (Double.compare(vgsDoGm, vgsDaSaida) != 0) {
+        if (!aproximadamenteIguais(vgsDoGm, vgsDaSaida)) {
             throw new IllegalArgumentException(
                     "Os valores de V_GS de g_m e r_o não coincidem.");
         }
@@ -270,6 +305,85 @@ public final class CaracterizacaoFetCtlr {
                 : 20.0 * Math.log10(Math.abs(ganho));
         return new ResultadoGanhoIntrinseco(
                 ganho, ganhoDb, resultadoLocal ? "LOCAL" : "EFETIVO");
+    }
+
+    public ResultadoGanhoIntegrado analisarGanhoIntrinseco(
+            CurvaDisponivel curvaTransferencia,
+            List<CurvaDisponivel> curvas,
+            double vgsReferencia,
+            double gmMinimo,
+            double gmMaximo,
+            double vdsMinimoSaturacao,
+            double vdsMaximoSaturacao,
+            boolean gmLocal) throws SQLException {
+        if (curvaTransferencia == null
+                || curvaTransferencia.configuracao() == null
+                || curvaTransferencia.configuracao().getTipoCurvaFet()
+                        != TipoCurvaFet.TRANSFERENCIA) {
+            throw new IllegalArgumentException(
+                    "Selecione uma curva de transferência configurada.");
+        }
+        validarFinito(vgsReferencia, "V_GS de referência");
+        if (curvas == null) {
+            throw new IllegalArgumentException("A lista de curvas não pode ser nula.");
+        }
+
+        CurvaDisponivel curvaSaida = curvas.stream()
+                .filter(item -> item != null
+                        && item.configuracao() != null
+                        && item.configuracao().getTipoCurvaFet() == TipoCurvaFet.SAIDA
+                        && aproximadamenteIguais(
+                                item.configuracao().getValorTensaoConstante(),
+                                vgsReferencia))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Não há curva de saída configurada com o V_GS de referência."));
+
+        double gm;
+        ResultadoTransferencia resultadoTransferencia = null;
+        ResultadoGmLocal resultadoLocal = null;
+        List<PontoFet> pontosTransferencia = carregarPontos(curvaTransferencia.curva());
+        if (gmLocal) {
+            resultadoLocal = calcularTranscondutanciaLocal(pontosTransferencia).stream()
+                    .filter(item -> aproximadamenteIguais(item.vgs(), vgsReferencia))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "O V_GS de referência não possui g_m local calculável."));
+            gm = resultadoLocal.transcondutancia();
+        } else {
+            validarIntervalo(gmMinimo, gmMaximo, "transcondutância");
+            if (vgsReferencia < gmMinimo || vgsReferencia > gmMaximo) {
+                throw new IllegalArgumentException(
+                        "O V_GS de referência deve pertencer ao intervalo de g_m.");
+            }
+            resultadoTransferencia = analisarTransferenciaPorIntervalo(
+                    pontosTransferencia, gmMinimo, gmMaximo);
+            gm = resultadoTransferencia.transcondutancia();
+        }
+
+        ResultadoSaida resultadoSaida = analisarSaida(
+                carregarPontos(curvaSaida.curva()),
+                vdsMinimoSaturacao, vdsMaximoSaturacao,
+                vdsMinimoSaturacao, vdsMaximoSaturacao);
+        ResultadoGanhoIntrinseco ganho = calcularGanhoIntrinseco(
+                gm,
+                vgsReferencia,
+                curvaTransferencia.configuracao().getValorTensaoConstante(),
+                resultadoSaida.resistenciaSaida(),
+                curvaSaida.configuracao().getValorTensaoConstante(),
+                vdsMinimoSaturacao,
+                vdsMaximoSaturacao,
+                gmLocal);
+        return new ResultadoGanhoIntegrado(
+                curvaTransferencia, curvaSaida, vgsReferencia,
+                resultadoTransferencia, resultadoLocal, resultadoSaida, ganho);
+    }
+
+    private boolean aproximadamenteIguais(double primeiro, double segundo) {
+        double escala = Math.max(Math.abs(primeiro), Math.abs(segundo));
+        double tolerancia = Math.max(TOLERANCIA_ABSOLUTA,
+                TOLERANCIA_RELATIVA * escala);
+        return Math.abs(primeiro - segundo) <= tolerancia;
     }
 
     private List<PontoFet> prepararPontos(List<PontoFet> pontos) {
@@ -428,6 +542,9 @@ public final class CaracterizacaoFetCtlr {
                                          AjusteLinear ajuste,
                                          List<String> advertencias) { }
 
+    public record ResultadoCurvaSaida(CurvaDisponivel curva,
+                                      ResultadoSaida resultado) { }
+
     public record ResultadoGmLocal(double vgs, double transcondutancia,
                                    AjusteLinear ajuste,
                                    List<String> advertencias) { }
@@ -435,4 +552,13 @@ public final class CaracterizacaoFetCtlr {
     public record ResultadoGanhoIntrinseco(double ganho,
                                            double ganhoDecibeis,
                                            String classificacao) { }
+
+    public record ResultadoGanhoIntegrado(
+            CurvaDisponivel curvaTransferencia,
+            CurvaDisponivel curvaSaida,
+            double vgsReferencia,
+            ResultadoTransferencia resultadoTransferencia,
+            ResultadoGmLocal resultadoGmLocal,
+            ResultadoSaida resultadoSaida,
+            ResultadoGanhoIntrinseco ganho) { }
 }
