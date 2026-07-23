@@ -12,17 +12,29 @@ import br.uel.gacs.model.Experimento;
 import br.uel.gacs.model.TipoCurvaFet;
 import br.uel.gacs.util.FormatadorNumero;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.cell.CheckBoxTableCell;
+import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.Separator;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.input.Clipboard;
@@ -75,50 +87,101 @@ public final class TelaCaracterizacaoFet {
                 configuracoes.put(item.curva().getId(), item.configuracao());
             }
         }
-        ComboBox<CurvaDisponivel> curva = comboCurvas(curvas, configuracoes);
+        ComboBox<CurvaDisponivel> curvaConfiguracao = comboCurvas(curvas, configuracoes);
         ComboBox<TipoCurvaFet> tipo = comboTipos();
         TextField tensaoConstante = campo("");
 
-        TextField ohmicoMinimo = campo("0");
-        TextField ohmicoMaximo = campo("1");
-        TextField saturacaoMinima = campo("2");
-        TextField saturacaoMaxima = campo("5");
+        ObservableList<LinhaCurvaSaida> linhasSaida = FXCollections.observableArrayList();
+        TableView<LinhaCurvaSaida> tabelaSaidas = tabelaCurvasSaida(linhasSaida);
+        ComboBox<CurvaDisponivel> curvaTransferencia = new ComboBox<>();
+        curvaTransferencia.setMaxWidth(Double.MAX_VALUE);
+        curvaTransferencia.setConverter(conversorCurvas(configuracoes));
+        Label vdsConstante = new Label("—");
         TextField gmMinimo = campo("0");
         TextField gmMaximo = campo("5");
         TextField vgsReferencia = campo("");
         CheckBox gmLocal = new CheckBox("Calcular g_m local com janela de três pontos");
 
-        GridPane formulario = new GridPane();
-        formulario.setHgap(10);
-        formulario.setVgap(9);
-        formulario.add(new Label("Curva:"), 0, 0);
-        formulario.add(curva, 1, 0, 3, 1);
-        formulario.addRow(1, new Label("Tipo da curva:"), tipo,
+        GridPane configuracaoPersistente = new GridPane();
+        configuracaoPersistente.setHgap(10);
+        configuracaoPersistente.setVgap(9);
+        configuracaoPersistente.add(new Label("Curva:"), 0, 0);
+        configuracaoPersistente.add(curvaConfiguracao, 1, 0, 3, 1);
+        configuracaoPersistente.addRow(1, new Label("Tipo da curva:"), tipo,
                 new Label("Tensão constante (V):"), tensaoConstante);
-        formulario.addRow(2, new Label("Região ôhmica — V_DS mínimo (V):"), ohmicoMinimo,
-                new Label("V_DS máximo (V):"), ohmicoMaximo);
-        formulario.addRow(3, new Label("Saturação — V_DS mínimo (V):"), saturacaoMinima,
-                new Label("V_DS máximo (V):"), saturacaoMaxima);
-        formulario.addRow(4, new Label("Intervalo de g_m — V_GS mínimo (V):"), gmMinimo,
-                new Label("V_GS máximo (V):"), gmMaximo);
-        formulario.add(gmLocal, 1, 5, 3, 1);
-        formulario.addRow(6, new Label("Ganho intrínseco — V_GS de referência (V):"),
-                vgsReferencia);
-        configurarColunas(formulario);
+        configurarColunas(configuracaoPersistente);
 
-        Runnable atualizarCampos = () -> {
-            boolean saida = tipo.getValue() == TipoCurvaFet.SAIDA;
-            ohmicoMinimo.setDisable(!saida);
-            ohmicoMaximo.setDisable(!saida);
-            saturacaoMinima.setDisable(!saida);
-            saturacaoMaxima.setDisable(!saida);
-            gmMinimo.setDisable(saida);
-            gmMaximo.setDisable(saida);
-            gmLocal.setDisable(saida);
+        GridPane formularioTransferencia = new GridPane();
+        formularioTransferencia.setHgap(10);
+        formularioTransferencia.setVgap(9);
+        formularioTransferencia.add(new Label("Curva de transferência:"), 0, 0);
+        formularioTransferencia.add(curvaTransferencia, 1, 0, 3, 1);
+        formularioTransferencia.addRow(1, new Label("V_DS constante:"), vdsConstante,
+                new Label("Pontos válidos:"), new Label());
+        Label pontosTransferencia = (Label) formularioTransferencia.getChildren()
+                .get(formularioTransferencia.getChildren().size() - 1);
+        formularioTransferencia.addRow(2,
+                new Label("Intervalo de g_m — V_GS mínimo (V):"), gmMinimo,
+                new Label("V_GS máximo (V):"), gmMaximo);
+        formularioTransferencia.add(gmLocal, 1, 3, 3, 1);
+        formularioTransferencia.addRow(4,
+                new Label("Ganho intrínseco — V_GS de referência (V):"),
+                vgsReferencia);
+        configurarColunas(formularioTransferencia);
+
+        Runnable atualizarListas = () -> {
+            Long idTransferenciaSelecionada = curvaTransferencia.getValue() == null
+                    ? null : curvaTransferencia.getValue().curva().getId();
+            Map<Long, LinhaCurvaSaida> linhasAnteriores = new HashMap<>();
+            for (LinhaCurvaSaida linha : linhasSaida) {
+                linhasAnteriores.put(linha.curva().curva().getId(), linha);
+            }
+            linhasSaida.setAll(curvas.stream()
+                    .map(item -> curvaAtualizada(item, configuracoes))
+                    .filter(item -> item.configuracao() != null
+                            && item.configuracao().getTipoCurvaFet()
+                                    == TipoCurvaFet.SAIDA)
+                    .sorted(Comparator.comparingDouble(item ->
+                            item.configuracao().getValorTensaoConstante()))
+                    .map(item -> {
+                        LinhaCurvaSaida anterior =
+                                linhasAnteriores.get(item.curva().getId());
+                        if (anterior == null) {
+                            return new LinhaCurvaSaida(item);
+                        }
+                        anterior.setCurva(item);
+                        return anterior;
+                    })
+                    .toList());
+
+            List<CurvaDisponivel> transferencias = curvas.stream()
+                    .map(item -> curvaAtualizada(item, configuracoes))
+                    .filter(item -> item.configuracao() != null
+                            && item.configuracao().getTipoCurvaFet()
+                                    == TipoCurvaFet.TRANSFERENCIA)
+                    .toList();
+            curvaTransferencia.setItems(
+                    FXCollections.observableArrayList(transferencias));
+            transferencias.stream()
+                    .filter(item -> item.curva().getId().equals(idTransferenciaSelecionada))
+                    .findFirst()
+                    .ifPresentOrElse(
+                            curvaTransferencia.getSelectionModel()::select,
+                            () -> curvaTransferencia.getSelectionModel().selectFirst());
+            CurvaDisponivel transferenciaSelecionada = curvaTransferencia.getValue();
+            if (transferenciaSelecionada == null) {
+                vdsConstante.setText("—");
+                pontosTransferencia.setText("—");
+            } else {
+                vdsConstante.setText(formatar(transferenciaSelecionada.configuracao()
+                        .getValorTensaoConstante()) + " V");
+                pontosTransferencia.setText(
+                        Integer.toString(transferenciaSelecionada.quantidadePontos()));
+            }
         };
 
         Runnable carregarConfiguracao = () -> {
-            CurvaDisponivel selecionada = curva.getValue();
+            CurvaDisponivel selecionada = curvaConfiguracao.getValue();
             CurvaFet configuracao = selecionada == null ? null
                     : configuracoes.get(selecionada.curva().getId());
             if (configuracao == null) {
@@ -128,12 +191,23 @@ public final class TelaCaracterizacaoFet {
                 tipo.getSelectionModel().select(configuracao.getTipoCurvaFet());
                 tensaoConstante.setText(formatar(configuracao.getValorTensaoConstante()));
             }
-            atualizarCampos.run();
         };
-        curva.setOnAction(evento -> carregarConfiguracao.run());
-        tipo.setOnAction(evento -> atualizarCampos.run());
-        curva.getSelectionModel().selectFirst();
+        curvaConfiguracao.setOnAction(evento -> carregarConfiguracao.run());
+        curvaTransferencia.setOnAction(evento -> {
+            CurvaDisponivel selecionada = curvaTransferencia.getValue();
+            if (selecionada == null) {
+                vdsConstante.setText("—");
+                pontosTransferencia.setText("—");
+            } else {
+                vdsConstante.setText(formatar(
+                        selecionada.configuracao().getValorTensaoConstante()) + " V");
+                pontosTransferencia.setText(
+                        Integer.toString(selecionada.quantidadePontos()));
+            }
+        });
+        curvaConfiguracao.getSelectionModel().selectFirst();
         carregarConfiguracao.run();
+        atualizarListas.run();
 
         TextArea relatorio = new TextArea();
         relatorio.setEditable(false);
@@ -141,9 +215,9 @@ public final class TelaCaracterizacaoFet {
         relatorio.setStyle("-fx-font-family: 'Consolas'; -fx-font-size: 13px;");
         relatorio.setPromptText("Configure a curva e calcule a caracterização.");
 
-        Button salvar = new Button("Salvar configuração da curva");
-        Button calcular = new Button("Calcular caracterização");
-        Button calcularFamilia = new Button("Calcular família de saída");
+        Button salvar = new Button("Salvar configuração");
+        Button calcularSaidas = new Button("Analisar curvas de saída selecionadas");
+        Button calcularTransferencia = new Button("Analisar curva de transferência");
         Button calcularGanho = new Button("Calcular ganho intrínseco");
         Button copiar = new Button("Copiar relatório");
         Button fechar = new Button("Fechar");
@@ -151,12 +225,14 @@ public final class TelaCaracterizacaoFet {
 
         salvar.setOnAction(evento -> {
             try {
-                CurvaDisponivel selecionada = exigirCurva(curva);
+                CurvaDisponivel selecionada = exigirCurva(curvaConfiguracao);
                 CurvaFet configuracao = controller.salvarConfiguracao(
                         idExperimento, selecionada.curva(), tipo.getValue(),
                         numero(tensaoConstante));
                 configuracoes.put(selecionada.curva().getId(), configuracao);
-                curva.setConverter(conversorCurvas(configuracoes));
+                curvaConfiguracao.setConverter(conversorCurvas(configuracoes));
+                curvaTransferencia.setConverter(conversorCurvas(configuracoes));
+                atualizarListas.run();
                 informar("A configuração da curva de FET foi salva.");
             } catch (IllegalArgumentException | SecurityException erro) {
                 erro(erro.getMessage());
@@ -165,82 +241,65 @@ public final class TelaCaracterizacaoFet {
             }
         });
 
-        calcular.setOnAction(evento -> {
+        calcularSaidas.setOnAction(evento -> {
             try {
-                CurvaDisponivel selecionada = exigirCurva(curva);
-                CurvaFet configuracao = configuracoes.get(selecionada.curva().getId());
-                if (configuracao == null
-                        || configuracao.getTipoCurvaFet() != tipo.getValue()
-                        || Double.compare(configuracao.getValorTensaoConstante(),
-                                numero(tensaoConstante)) != 0) {
-                    throw new IllegalArgumentException(
-                            "Salve a configuração atual da curva antes de calcular.");
-                }
-                List<CaracterizacaoFetCtlr.PontoFet> pontos =
-                        controller.carregarPontos(selecionada.curva());
-                if (tipo.getValue() == TipoCurvaFet.SAIDA) {
-                    ResultadoSaida resultado = controller.analisarSaida(
-                            pontos, numero(ohmicoMinimo), numero(ohmicoMaximo),
-                            numero(saturacaoMinima), numero(saturacaoMaxima));
-                    relatorio.setText(relatorioSaida(experimento, selecionada,
-                            configuracao, resultado));
-                } else if (gmLocal.isSelected()) {
-                    List<ResultadoGmLocal> resultados =
-                            controller.calcularTranscondutanciaLocal(pontos);
-                    relatorio.setText(relatorioGmLocal(experimento, selecionada,
-                            configuracao, resultados));
-                } else {
-                    ResultadoTransferencia resultado =
-                            controller.analisarTransferenciaPorIntervalo(
-                                    pontos, numero(gmMinimo), numero(gmMaximo));
-                    relatorio.setText(relatorioTransferencia(experimento, selecionada,
-                            configuracao, resultado));
-                }
-                copiar.setDisable(false);
-            } catch (IllegalArgumentException erro) {
-                erro(erro.getMessage());
-            } catch (SQLException erro) {
-                erro("Não foi possível carregar os pontos da curva selecionada.");
-            }
-        });
-
-        calcularFamilia.setOnAction(evento -> {
-            try {
-                List<CurvaDisponivel> curvasAtualizadas = curvas.stream()
-                        .map(item -> new CurvaDisponivel(
-                                item.curva(), item.colunaX(), item.colunaY(),
-                                configuracoes.get(item.curva().getId()),
-                                item.quantidadePontos()))
-                        .toList();
-                List<ResultadoCurvaSaida> resultados = controller.analisarFamiliaSaida(
-                        curvasAtualizadas, numero(ohmicoMinimo), numero(ohmicoMaximo),
-                        numero(saturacaoMinima), numero(saturacaoMaxima));
+                List<CaracterizacaoFetCtlr.ParametrosCurvaSaida> parametros =
+                        parametrosSaidaSelecionados(linhasSaida);
+                List<ResultadoCurvaSaida> resultados =
+                        controller.analisarFamiliaSaida(parametros);
                 relatorio.setText(relatorioFamiliaSaida(experimento, resultados));
                 copiar.setDisable(false);
             } catch (IllegalArgumentException erro) {
                 erro(erro.getMessage());
             } catch (SQLException erro) {
-                erro("Não foi possível carregar as curvas da família de saída.");
+                erro("Não foi possível carregar as curvas de saída selecionadas.");
+            }
+        });
+
+        calcularTransferencia.setOnAction(evento -> {
+            try {
+                CurvaDisponivel transferencia = exigirCurva(curvaTransferencia);
+                List<CaracterizacaoFetCtlr.PontoFet> pontos =
+                        controller.carregarPontos(transferencia.curva());
+                if (gmLocal.isSelected()) {
+                    List<ResultadoGmLocal> resultados =
+                            controller.calcularTranscondutanciaLocal(pontos);
+                    relatorio.setText(relatorioGmLocal(experimento, transferencia,
+                            transferencia.configuracao(), resultados));
+                } else {
+                    ResultadoTransferencia resultado =
+                            controller.analisarTransferenciaPorIntervalo(
+                                    pontos, numero(gmMinimo), numero(gmMaximo));
+                    relatorio.setText(relatorioTransferencia(
+                            experimento, transferencia,
+                            transferencia.configuracao(), resultado));
+                }
+                copiar.setDisable(false);
+            } catch (IllegalArgumentException erro) {
+                erro(erro.getMessage());
+            } catch (SQLException erro) {
+                erro("Não foi possível carregar a curva de transferência.");
             }
         });
 
         calcularGanho.setOnAction(evento -> {
             try {
-                CurvaDisponivel selecionada = exigirCurva(curva);
-                List<CurvaDisponivel> curvasAtualizadas = curvas.stream()
-                        .map(item -> new CurvaDisponivel(
-                                item.curva(), item.colunaX(), item.colunaY(),
-                                configuracoes.get(item.curva().getId()),
-                                item.quantidadePontos()))
-                        .toList();
-                CurvaDisponivel transferencia = curvasAtualizadas.stream()
-                        .filter(item -> item.curva().getId()
-                                .equals(selecionada.curva().getId()))
-                        .findFirst().orElseThrow();
+                CurvaDisponivel transferencia = exigirCurva(curvaTransferencia);
+                double referencia = numero(vgsReferencia);
+                LinhaCurvaSaida linhaSaida = linhasSaida.stream()
+                        .filter(LinhaCurvaSaida::isAnalisar)
+                        .filter(linha -> aproximadamenteIguais(
+                                linha.curva().configuracao()
+                                        .getValorTensaoConstante(), referencia))
+                        .findFirst()
+                        .orElseThrow(() -> new IllegalArgumentException(
+                                "Selecione para análise uma curva de saída "
+                                        + "com o V_GS de referência."));
                 ResultadoGanhoIntegrado resultado = controller.analisarGanhoIntrinseco(
-                        transferencia, curvasAtualizadas, numero(vgsReferencia),
+                        transferencia, List.of(linhaSaida.curva()), referencia,
                         numero(gmMinimo), numero(gmMaximo),
-                        numero(saturacaoMinima), numero(saturacaoMaxima),
+                        numero(linhaSaida.saturacaoMinima()),
+                        numero(linhaSaida.saturacaoMaxima()),
                         gmLocal.isSelected());
                 relatorio.setText(relatorioGanhoIntrinseco(experimento, resultado));
                 copiar.setDisable(false);
@@ -260,9 +319,16 @@ public final class TelaCaracterizacaoFet {
 
         Label titulo = new Label("Caracterização genérica em unidades SI");
         titulo.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
-        HBox botoes = new HBox(8, salvar, calcular, calcularFamilia,
+        Label tituloConfiguracao = subtitulo("Configuração persistente das curvas");
+        Label tituloSaidas = subtitulo("Curvas de saída — intervalos desta execução");
+        Label tituloTransferencia = subtitulo("Curva de transferência");
+        HBox botoesConfiguracao = new HBox(8, salvar);
+        HBox botoesAnalise = new HBox(8, calcularSaidas, calcularTransferencia,
                 calcularGanho, copiar);
-        VBox topo = new VBox(10, titulo, formulario, botoes);
+        VBox topo = new VBox(9, titulo, tituloConfiguracao,
+                configuracaoPersistente, botoesConfiguracao, new Separator(),
+                tituloSaidas, tabelaSaidas, new Separator(),
+                tituloTransferencia, formularioTransferencia, botoesAnalise);
         topo.setPadding(new Insets(0, 0, 12, 0));
 
         BorderPane raiz = new BorderPane(relatorio);
@@ -271,10 +337,115 @@ public final class TelaCaracterizacaoFet {
         HBox rodape = new HBox(fechar);
         rodape.setPadding(new Insets(10, 0, 0, 0));
         raiz.setBottom(rodape);
-        janela.setMinWidth(1100);
-        janela.setMinHeight(760);
-        janela.setScene(new Scene(raiz, 1160, 820));
+        janela.setMinWidth(1250);
+        janela.setMinHeight(900);
+        janela.setScene(new Scene(raiz, 1320, 960));
         janela.showAndWait();
+    }
+
+    private TableView<LinhaCurvaSaida> tabelaCurvasSaida(
+            ObservableList<LinhaCurvaSaida> linhas) {
+        TableView<LinhaCurvaSaida> tabela = new TableView<>(linhas);
+        tabela.setEditable(true);
+        tabela.setFixedCellSize(30);
+        tabela.setPrefHeight(30 * 5 + 32);
+        tabela.setMinHeight(30 * 5 + 32);
+        tabela.setMaxHeight(30 * 5 + 32);
+        tabela.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+        tabela.setPlaceholder(new Label(
+                "Nenhuma curva está configurada como curva de saída."));
+
+        TableColumn<LinhaCurvaSaida, Boolean> analisar =
+                new TableColumn<>("Analisar");
+        analisar.setCellValueFactory(dado -> dado.getValue().analisarProperty());
+        analisar.setCellFactory(CheckBoxTableCell.forTableColumn(analisar));
+        analisar.setEditable(true);
+        analisar.setMinWidth(78);
+        analisar.setMaxWidth(90);
+
+        TableColumn<LinhaCurvaSaida, String> nome = new TableColumn<>("Curva");
+        nome.setCellValueFactory(dado ->
+                new SimpleStringProperty(dado.getValue().curva().curva().getNome()));
+        nome.setEditable(false);
+        nome.setMinWidth(190);
+
+        TableColumn<LinhaCurvaSaida, String> vgs =
+                new TableColumn<>("V_GS constante (V)");
+        vgs.setCellValueFactory(dado -> new SimpleStringProperty(formatar(
+                dado.getValue().curva().configuracao().getValorTensaoConstante())));
+        vgs.setEditable(false);
+        vgs.setMinWidth(135);
+
+        TableColumn<LinhaCurvaSaida, String> ohmicoMinimo =
+                colunaEditavel("Ôhmico mín. (V)",
+                        LinhaCurvaSaida::ohmicoMinimoProperty);
+        TableColumn<LinhaCurvaSaida, String> ohmicoMaximo =
+                colunaEditavel("Ôhmico máx. (V)",
+                        LinhaCurvaSaida::ohmicoMaximoProperty);
+        TableColumn<LinhaCurvaSaida, String> saturacaoMinima =
+                colunaEditavel("Saturação mín. (V)",
+                        LinhaCurvaSaida::saturacaoMinimaProperty);
+        TableColumn<LinhaCurvaSaida, String> saturacaoMaxima =
+                colunaEditavel("Saturação máx. (V)",
+                        LinhaCurvaSaida::saturacaoMaximaProperty);
+
+        tabela.getColumns().addAll(analisar, nome, vgs, ohmicoMinimo,
+                ohmicoMaximo, saturacaoMinima, saturacaoMaxima);
+        return tabela;
+    }
+
+    private TableColumn<LinhaCurvaSaida, String> colunaEditavel(
+            String titulo,
+            java.util.function.Function<LinhaCurvaSaida, StringProperty> propriedade) {
+        TableColumn<LinhaCurvaSaida, String> coluna = new TableColumn<>(titulo);
+        coluna.setCellValueFactory(dado -> propriedade.apply(dado.getValue()));
+        coluna.setCellFactory(TextFieldTableCell.forTableColumn());
+        coluna.setOnEditCommit(evento -> propriedade.apply(
+                evento.getRowValue()).set(evento.getNewValue()));
+        coluna.setMinWidth(130);
+        return coluna;
+    }
+
+    private List<CaracterizacaoFetCtlr.ParametrosCurvaSaida>
+            parametrosSaidaSelecionados(List<LinhaCurvaSaida> linhas) {
+        List<CaracterizacaoFetCtlr.ParametrosCurvaSaida> parametros =
+                new ArrayList<>();
+        for (LinhaCurvaSaida linha : linhas) {
+            if (!linha.isAnalisar()) {
+                continue;
+            }
+            parametros.add(new CaracterizacaoFetCtlr.ParametrosCurvaSaida(
+                    linha.curva(),
+                    numero(linha.ohmicoMinimo()),
+                    numero(linha.ohmicoMaximo()),
+                    numero(linha.saturacaoMinima()),
+                    numero(linha.saturacaoMaxima())));
+        }
+        if (parametros.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Selecione pelo menos uma curva de saída para analisar.");
+        }
+        return List.copyOf(parametros);
+    }
+
+    private CurvaDisponivel curvaAtualizada(
+            CurvaDisponivel item, Map<Long, CurvaFet> configuracoes) {
+        return new CurvaDisponivel(
+                item.curva(), item.colunaX(), item.colunaY(),
+                configuracoes.get(item.curva().getId()),
+                item.quantidadePontos());
+    }
+
+    private Label subtitulo(String texto) {
+        Label label = new Label(texto);
+        label.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
+        return label;
+    }
+
+    private boolean aproximadamenteIguais(double primeiro, double segundo) {
+        double escala = Math.max(Math.abs(primeiro), Math.abs(segundo));
+        double tolerancia = Math.max(1.0e-15, 1.0e-12 * escala);
+        return Math.abs(primeiro - segundo) <= tolerancia;
     }
 
     private String relatorioSaida(Experimento experimento, CurvaDisponivel curva,
@@ -519,6 +690,14 @@ public final class TelaCaracterizacaoFet {
         return FormatadorNumero.converter(campo.getText());
     }
 
+    private double numero(StringProperty propriedade) {
+        if (propriedade.get() == null || propriedade.get().isBlank()) {
+            throw new IllegalArgumentException(
+                    "Preencha os intervalos das curvas de saída selecionadas.");
+        }
+        return FormatadorNumero.converter(propriedade.get());
+    }
+
     private String formatar(double valor) {
         return FormatadorNumero.formatar(valor);
     }
@@ -561,5 +740,67 @@ public final class TelaCaracterizacaoFet {
         alerta.setHeaderText("Caracterização de FET não concluída");
         alerta.setContentText(texto);
         alerta.showAndWait();
+    }
+
+    /** Dados transitórios de uma linha da tabela de curvas de saída. */
+    private static final class LinhaCurvaSaida {
+        private CurvaDisponivel curva;
+        private final BooleanProperty analisar = new SimpleBooleanProperty(true);
+        private final StringProperty ohmicoMinimo = new SimpleStringProperty("0");
+        private final StringProperty ohmicoMaximo = new SimpleStringProperty("1");
+        private final StringProperty saturacaoMinima = new SimpleStringProperty("2");
+        private final StringProperty saturacaoMaxima = new SimpleStringProperty("5");
+
+        private LinhaCurvaSaida(CurvaDisponivel curva) {
+            this.curva = curva;
+        }
+
+        private CurvaDisponivel curva() {
+            return curva;
+        }
+
+        private void setCurva(CurvaDisponivel curva) {
+            this.curva = curva;
+        }
+
+        private boolean isAnalisar() {
+            return analisar.get();
+        }
+
+        private BooleanProperty analisarProperty() {
+            return analisar;
+        }
+
+        private StringProperty ohmicoMinimo() {
+            return ohmicoMinimo;
+        }
+
+        private StringProperty ohmicoMinimoProperty() {
+            return ohmicoMinimo;
+        }
+
+        private StringProperty ohmicoMaximo() {
+            return ohmicoMaximo;
+        }
+
+        private StringProperty ohmicoMaximoProperty() {
+            return ohmicoMaximo;
+        }
+
+        private StringProperty saturacaoMinima() {
+            return saturacaoMinima;
+        }
+
+        private StringProperty saturacaoMinimaProperty() {
+            return saturacaoMinima;
+        }
+
+        private StringProperty saturacaoMaxima() {
+            return saturacaoMaxima;
+        }
+
+        private StringProperty saturacaoMaximaProperty() {
+            return saturacaoMaxima;
+        }
     }
 }

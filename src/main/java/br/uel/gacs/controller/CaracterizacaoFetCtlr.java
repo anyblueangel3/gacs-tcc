@@ -185,36 +185,34 @@ public final class CaracterizacaoFetCtlr {
     }
 
     public List<ResultadoCurvaSaida> analisarFamiliaSaida(
-            List<CurvaDisponivel> curvas,
-            double tensaoMinimaOhmica,
-            double tensaoMaximaOhmica,
-            double tensaoMinimaSaturacao,
-            double tensaoMaximaSaturacao) throws SQLException {
-        if (curvas == null) {
-            throw new IllegalArgumentException("A lista de curvas não pode ser nula.");
-        }
-
-        List<CurvaDisponivel> curvasSaida = curvas.stream()
-                .filter(item -> item != null
-                        && item.configuracao() != null
-                        && item.configuracao().getTipoCurvaFet() == TipoCurvaFet.SAIDA)
-                .sorted(Comparator.comparingDouble(
-                        item -> item.configuracao().getValorTensaoConstante()))
-                .toList();
-        if (curvasSaida.size() < 2) {
+            List<ParametrosCurvaSaida> parametros) throws SQLException {
+        if (parametros == null || parametros.isEmpty()) {
             throw new IllegalArgumentException(
-                    "Configure pelo menos duas curvas de saída para analisar a família.");
+                    "Selecione pelo menos uma curva de saída para analisar.");
+        }
+        for (ParametrosCurvaSaida item : parametros) {
+            if (item == null || item.curva() == null
+                    || item.curva().configuracao() == null
+                    || item.curva().configuracao().getTipoCurvaFet()
+                            != TipoCurvaFet.SAIDA) {
+                throw new IllegalArgumentException(
+                        "A seleção contém uma curva que não é de saída.");
+            }
         }
 
         List<ResultadoCurvaSaida> resultados = new ArrayList<>();
-        for (CurvaDisponivel item : curvasSaida) {
+        for (ParametrosCurvaSaida item : parametros.stream()
+                .sorted(Comparator.comparingDouble(parametro ->
+                        parametro.curva().configuracao()
+                                .getValorTensaoConstante()))
+                .toList()) {
             ResultadoSaida resultado = analisarSaida(
-                    carregarPontos(item.curva()),
-                    tensaoMinimaOhmica,
-                    tensaoMaximaOhmica,
-                    tensaoMinimaSaturacao,
-                    tensaoMaximaSaturacao);
-            resultados.add(new ResultadoCurvaSaida(item, resultado));
+                    carregarPontos(item.curva().curva()),
+                    item.tensaoMinimaOhmica(),
+                    item.tensaoMaximaOhmica(),
+                    item.tensaoMinimaSaturacao(),
+                    item.tensaoMaximaSaturacao());
+            resultados.add(new ResultadoCurvaSaida(item.curva(), resultado));
         }
         return List.copyOf(resultados);
     }
@@ -544,6 +542,13 @@ public final class CaracterizacaoFetCtlr {
 
     public record ResultadoCurvaSaida(CurvaDisponivel curva,
                                       ResultadoSaida resultado) { }
+
+    public record ParametrosCurvaSaida(
+            CurvaDisponivel curva,
+            double tensaoMinimaOhmica,
+            double tensaoMaximaOhmica,
+            double tensaoMinimaSaturacao,
+            double tensaoMaximaSaturacao) { }
 
     public record ResultadoGmLocal(double vgs, double transcondutancia,
                                    AjusteLinear ajuste,

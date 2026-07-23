@@ -48,13 +48,21 @@ arredondamento intermediário.
 
 ## Procedimento
 
-Para curva de saída, informar `V_GS`, selecionar os intervalos ôhmico e de
-saturação e executar os ajustes. Quando houver pelo menos duas curvas de saída
-configuradas, a análise da família aplica os mesmos intervalos a todas elas,
-ordena o relatório por `V_GS` e preserva os resultados e advertências de cada
-curva. Para curva de transferência, informar `V_DS`
-e selecionar o cálculo de `g_m`. A análise ordena uma cópia dos pares pelo eixo
-X e nunca modifica a planilha.
+Para as curvas de saída, informar `V_GS` na configuração persistente e, na
+tabela de análise, selecionar as curvas desejadas e os intervalos ôhmico e de
+saturação próprios de cada uma. A tabela apresenta cinco linhas visíveis e
+rolagem vertical para qualquer quantidade de curvas. O relatório é ordenado por
+`V_GS` e preserva os resultados e advertências de cada curva selecionada.
+
+O `CheckBox` **Analisar** inclui ou ignora cada curva de saída somente na
+execução corrente. Os intervalos e a seleção permanecem em memória enquanto a
+tela estiver aberta e não são persistidos.
+
+Para a curva de transferência, informar `V_DS`, selecionar a curva em um
+formulário independente e escolher o cálculo de `g_m`. A transferência pode ser
+analisada sozinha, sem exigir curva de saída. Curvas de saída são exigidas
+somente nos cálculos que dependem delas, como o ganho intrínseco. A análise
+ordena uma cópia dos pares pelo eixo X e nunca modifica a planilha.
 
 ## Fora da primeira versão
 
@@ -68,7 +76,7 @@ X e nunca modifica a planilha.
 A temperatura poderá ser informada como condição experimental, em kelvin, sem
 análise térmica automática.
 
-## Estado de implementação em 22/07/2026
+## Estado de implementação em 23/07/2026
 
 Estão implementados:
 
@@ -77,7 +85,9 @@ Estão implementados:
 - tensão de joelho operacional;
 - transcondutância por intervalo e por janela local de três pontos;
 - relatório textual e cópia para a área de transferência.
-- análise consolidada de famílias com duas ou mais curvas de saída.
+- tabela transitória com seleção e intervalos individuais por curva de saída;
+- análise conjunta de uma ou mais curvas de saída selecionadas;
+- formulário e análise independente da curva de transferência.
 
 O ganho intrínseco está integrado à interface: a curva de transferência
 selecionada é combinada automaticamente com a curva de saída configurada no
