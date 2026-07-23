@@ -14,6 +14,7 @@ Esta pasta separa a especificação vigente dos registros históricos.
 | Curvas e gráficos | `graficos-e-curvas.md` |
 | Caracterização de diodos | `caracterizacao-de-diodos.md` |
 | Especificação da caracterização de FET | `caracterizacao-de-fet.md` |
+| Empacotamento e instalação | `implantacao.md` |
 | Situação corrente do desenvolvimento | `estado-atual-e-proximos-passos.md` |
 
 `AGENTS.md` contém somente as instruções operacionais necessárias aos agentes.
