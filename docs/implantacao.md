@@ -52,11 +52,31 @@ O resultado será:
 target\instalador\saida\Instalador-GACS-0.1.0.exe
 ```
 
+## Validação da distribuição
+
+A distribuição `0.1.0` foi validada no Windows 11 em 24 de julho de 2026.
+O procedimento confirmou:
+
+- compilação do projeto e criação da aplicação autônoma;
+- geração do instalador pelo Inno Setup 6;
+- instalação em `C:\Program Files\GACS`;
+- abertura pelo atalho do menu Iniciar;
+- funcionamento do login e acesso aos experimentos persistidos;
+- execução da caracterização de uma família de três curvas de saída de FET e
+  uma curva de transferência;
+- cálculo integrado de `g_m`, `g_ds`, `r_o` e ganho intrínseco;
+- encerramento, reabertura, desinstalação e reinstalação sem falhas.
+
+A desinstalação remove os arquivos e atalhos do GACS, mas não altera o banco
+`DadosGACS`. Após a reinstalação, os usuários e experimentos anteriormente
+registrados permaneceram disponíveis.
+
 ## Banco de dados
 
 O `database.properties` existente permanece empacotado como recurso da
 aplicação nesta primeira versão. O GACS continua responsável por criar
 `DadosGACS` e suas tabelas quando o banco ainda não existir.
 
-A integração da instalação e da configuração do MySQL 8 será acrescentada
-depois que a aplicação autônoma for validada fora do VS Code.
+A integração da instalação e da configuração do MySQL permanece como evolução
+posterior. A distribuição atual pressupõe um servidor MySQL 8 previamente
+instalado e compatível com as configurações de conexão empacotadas.

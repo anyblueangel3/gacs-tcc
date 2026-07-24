@@ -9,7 +9,11 @@
 - planilha com digitação, colagem, CSV e operações de linhas, colunas e células;
 - persistência transacional das colunas e medidas;
 - criação, listagem e visualização de gráficos e curvas;
-- caracterização de diodos nas regiões direta, reversa e pós-ruptura.
+- caracterização de diodos nas regiões direta, reversa e pós-ruptura;
+- distribuição instalável `0.1.0` para Windows 11 de 64 bits, composta por
+  aplicação autônoma, runtime Java e instalador Inno Setup;
+- instalação, abertura pelo menu Iniciar, desinstalação e reinstalação
+  validadas com preservação do banco `DadosGACS`.
 
 ## Implementado neste incremento
 
@@ -28,12 +32,11 @@
 ## Aprovado e ainda não implementado
 
 - testes completos com famílias experimentais de FET;
-- distribuição instalável do GACS.
+- integração da instalação e da configuração do MySQL 8.
 
 ## Próxima sequência
 
-1. compilar e testar o novo fluxo no ambiente Java 21 do projeto;
-2. corrigir eventuais problemas observados na interface;
-3. validar uma família completa de curvas de saída;
-4. preparar a distribuição instalável;
-5. conferir novamente código e documentação para a entrega.
+1. validar as caracterizações com famílias experimentais de FET;
+2. corrigir eventuais problemas observados com dados experimentais;
+3. conferir novamente código e documentação para a apresentação do protótipo;
+4. planejar, em etapa posterior, a configuração do MySQL na distribuição.
